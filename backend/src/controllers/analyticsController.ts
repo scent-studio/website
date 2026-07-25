@@ -2,6 +2,7 @@ const Analytics = require('../models/Analytics');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Review = require('../models/Review');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -99,6 +100,61 @@ const getDashboardStats = asyncHandler(async (req: any, res: any) => {
 
   const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].total : 0;
 
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const revenueByDay = await Order.aggregate([
+    { $match: { createdAt: { $gte: thirtyDaysAgo }, status: { $ne: 'cancelled' } } },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        revenue: { $sum: '$total' },
+        orders: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+  const ordersByMonth = await Order.aggregate([
+    { $match: { createdAt: { $gte: twelveMonthsAgo } } },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  const recentOrders = await Order.find()
+    .populate('user', 'name email')
+    .sort('-createdAt')
+    .limit(5)
+    .select('_id user guestInfo orderItems total status orderStatus createdAt isGuestOrder');
+
+  const topProducts = await Product.find({ isVisible: true })
+    .sort('-totalSales')
+    .limit(5)
+    .select('name slug totalSales price images');
+
+  const latestReviews = await Review.find()
+    .populate('user', 'name avatar')
+    .populate('product', 'name slug')
+    .sort('-createdAt')
+    .limit(5)
+    .select('_id user product rating title comment isApproved createdAt');
+
+  const lowStockProducts = await Product.find({
+    $expr: { $lte: ['$stock', '$lowStockThreshold'] },
+    isVisible: true,
+  })
+    .sort('stock')
+    .limit(10)
+    .select('name slug stock lowStockThreshold images');
+
   res.status(200).json(
     ApiResponse.success({
       todayOrders,
@@ -109,6 +165,12 @@ const getDashboardStats = asyncHandler(async (req: any, res: any) => {
       totalRevenue,
       lowStockCount,
       pendingOrders,
+      revenueByDay: revenueByDay.map((r: any) => ({ date: r._id, revenue: r.revenue, orders: r.orders })),
+      ordersByMonth: ordersByMonth.map((o: any) => ({ month: o._id, count: o.count })),
+      recentOrders,
+      topProducts,
+      latestReviews,
+      lowStockProducts,
     })
   );
 });

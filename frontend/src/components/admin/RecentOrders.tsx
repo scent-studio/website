@@ -3,13 +3,23 @@ import { Link } from 'react-router-dom';
 import { cn, formatPrice, formatDate } from '../../lib/utils';
 import StatusBadge from './StatusBadge';
 
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+  image: string;
+}
+
 interface Order {
   _id: string;
-  user?: { name: string };
+  user?: { name: string; email: string };
+  guestInfo?: { name: string; email?: string; phone?: string };
+  orderItems: OrderItem[];
   total: number;
+  status: string;
   orderStatus: string;
   createdAt: string;
-  items: Array<{ name: string }>;
+  isGuestOrder: boolean;
 }
 
 interface RecentOrdersProps {
@@ -17,15 +27,7 @@ interface RecentOrdersProps {
   className?: string;
 }
 
-const defaultOrders: Order[] = [
-  { _id: 'ORD-001', user: { name: 'Isabella R.' }, total: 245, orderStatus: 'delivered', createdAt: new Date().toISOString(), items: [{ name: 'Rose Velvet' }] },
-  { _id: 'ORD-002', user: { name: 'James M.' }, total: 185, orderStatus: 'shipped', createdAt: new Date(Date.now() - 86400000).toISOString(), items: [{ name: 'Midnight Oud' }] },
-  { _id: 'ORD-003', user: { name: 'Sophie L.' }, total: 430, orderStatus: 'processing', createdAt: new Date(Date.now() - 172800000).toISOString(), items: [{ name: 'Amber Nights' }, { name: 'Rose Velvet' }] },
-  { _id: 'ORD-004', user: { name: 'Alexander K.' }, total: 320, orderStatus: 'pending', createdAt: new Date(Date.now() - 259200000).toISOString(), items: [{ name: 'Oud Royale' }] },
-  { _id: 'ORD-005', user: { name: 'Emma W.' }, total: 145, orderStatus: 'cancelled', createdAt: new Date(Date.now() - 345600000).toISOString() as any, items: [{ name: 'Vanilla Bourbon' }] },
-];
-
-export default function RecentOrders({ orders = defaultOrders, className }: RecentOrdersProps) {
+export default function RecentOrders({ orders = [], className }: RecentOrdersProps) {
   return (
     <div className={cn('border border-luxury-border', className)}>
       <div className="flex items-center justify-between px-5 py-4 border-b border-luxury-border">
@@ -46,21 +48,30 @@ export default function RecentOrders({ orders = defaultOrders, className }: Rece
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {orders.map((order) => (
-              <tr key={order._id} className="hover:bg-luxury-ink/20 transition-colors">
-                <td className="px-4 py-3">
-                  <Link to={`/admin/orders/${order._id}`} className="text-sm text-luxury-gold hover:text-luxury-gold-light transition-colors">
-                    #{order._id}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-sm text-luxury-charcoal">{order.user?.name}</td>
-                <td className="px-4 py-3 text-sm text-luxury-steel">{order.items.length} item(s)</td>
-                <td className="px-4 py-3 text-sm font-serif text-luxury-gold">{formatPrice(order.total)}</td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={order.orderStatus} />
+            {orders.length > 0 ? orders.map((order) => {
+              const customerName = order.user?.name || order.guestInfo?.name || 'Guest';
+              return (
+                <tr key={order._id} className="hover:bg-luxury-ink/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <Link to={`/admin/orders/${order._id}`} className="text-sm text-luxury-gold hover:text-luxury-gold-light transition-colors">
+                      #{order._id.slice(-6).toUpperCase()}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-luxury-charcoal">{customerName}</td>
+                  <td className="px-4 py-3 text-sm text-luxury-steel">{order.orderItems.length} item(s)</td>
+                  <td className="px-4 py-3 text-sm font-serif text-luxury-gold">{formatPrice(order.total)}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={order.orderStatus || order.status} />
+                  </td>
+                </tr>
+              );
+            }) : (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-sm text-luxury-steel">
+                  No orders yet
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

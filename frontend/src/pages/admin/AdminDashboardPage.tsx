@@ -8,8 +8,7 @@ import RecentOrders from '../../components/admin/RecentOrders';
 import TopProducts from '../../components/admin/TopProducts';
 import LatestReviews from '../../components/admin/LatestReviews';
 import InventoryAlerts from '../../components/admin/InventoryAlerts';
-import { analyticsService } from '../../services/analyticsService';
-import type { AnalyticsData } from '../../services/analyticsService';
+import { analyticsService, type DashboardData } from '../../services/analyticsService';
 import { formatPrice } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
@@ -34,7 +33,7 @@ const sectionReveal = {
 };
 
 export default function AdminDashboardPage() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,10 +44,10 @@ export default function AdminDashboardPage() {
   }, []);
 
   const stats = [
-    { icon: <DollarSign size={20} />, label: 'Total Revenue', value: data ? formatPrice(data.totalRevenue) : '$0', trend: 12 },
-    { icon: <ShoppingCart size={20} />, label: 'Total Orders', value: data?.totalOrders || 0, trend: 8 },
-    { icon: <Users size={20} />, label: 'Total Customers', value: data?.totalUsers || 0, trend: 15 },
-    { icon: <Package size={20} />, label: 'Total Products', value: data?.totalProducts || 0, trend: 5 },
+    { icon: <DollarSign size={20} />, label: 'Total Revenue', value: data ? formatPrice(data.totalRevenue) : 'Rs. 0' },
+    { icon: <ShoppingCart size={20} />, label: 'Total Orders', value: data?.totalOrders || 0 },
+    { icon: <Users size={20} />, label: 'Total Customers', value: data?.totalUsers || 0 },
+    { icon: <Package size={20} />, label: 'Total Products', value: data?.totalProducts || 0 },
   ];
 
   return (
@@ -76,7 +75,6 @@ export default function AdminDashboardPage() {
             icon={stat.icon}
             label={stat.label}
             value={stat.value}
-            trend={stat.trend}
             delay={0.08 + idx * 0.09}
           />
         ))}
@@ -89,8 +87,8 @@ export default function AdminDashboardPage() {
         variants={sectionReveal}
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
-        <SalesChart />
-        <OrdersChart />
+        <SalesChart data={data?.revenueByDay} />
+        <OrdersChart data={data?.ordersByMonth} />
       </motion.div>
 
       <motion.div
@@ -100,8 +98,8 @@ export default function AdminDashboardPage() {
         variants={sectionReveal}
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
-        <RecentOrders />
-        <TopProducts />
+        <RecentOrders orders={data?.recentOrders} />
+        <TopProducts products={data?.topProducts} />
       </motion.div>
 
       <motion.div
@@ -111,8 +109,8 @@ export default function AdminDashboardPage() {
         variants={sectionReveal}
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
-        <LatestReviews />
-        <InventoryAlerts />
+        <LatestReviews reviews={data?.latestReviews} />
+        <InventoryAlerts items={data?.lowStockProducts} />
       </motion.div>
     </div>
   );
