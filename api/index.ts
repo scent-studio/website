@@ -1,11 +1,13 @@
-const express = require('express');
-const helmet = require('helmet');
-const cors = require('cors');
-const compression = require('compression');
-const cookieParser = require('cookie-parser');
-const mongoose = require('mongoose');
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import mongoose from 'mongoose';
 
+// @ts-ignore
 const routes = require('../backend/src/routes/index');
+// @ts-ignore
 const errorHandler = require('../backend/src/middleware/error');
 
 const app = express();
@@ -15,13 +17,12 @@ let isConnected = false;
 async function connectDB() {
   if (isConnected) return;
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
+    await mongoose.connect(process.env.MONGODB_URI!, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });
     isConnected = true;
-    console.log('MongoDB connected');
   } catch (error) {
     console.error('MongoDB connection error:', error);
     throw error;
@@ -29,8 +30,12 @@ async function connectDB() {
 }
 
 app.use(async (req, res, next) => {
-  await connectDB();
-  next();
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Database connection failed' });
+  }
 });
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
@@ -58,4 +63,4 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
-module.exports = app;
+export default app;
