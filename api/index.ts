@@ -16,16 +16,18 @@ let isConnected = false;
 
 async function connectDB() {
   if (isConnected) return;
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error('MONGODB_URI environment variable is not set');
+  }
   try {
-    await mongoose.connect(process.env.MONGODB_URI!, {
-      maxPoolSize: 10,
+    await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
     });
     isConnected = true;
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw error;
+  } catch (error: any) {
+    isConnected = false;
+    throw new Error(`MongoDB connection failed: ${error.message}`);
   }
 }
 
@@ -33,8 +35,8 @@ app.use(async (req, res, next) => {
   try {
     await connectDB();
     next();
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Database connection failed' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Database connection failed' });
   }
 });
 
