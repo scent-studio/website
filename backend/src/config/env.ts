@@ -26,14 +26,8 @@ interface EnvConfig {
 }
 
 const validateEnv = (): EnvConfig => {
-  const requiredVars = [
-    'MONGODB_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET',
-  ];
-
-  for (const varName of requiredVars) {
-    if (!process.env[varName]) {
-      throw new Error(`Environment variable ${varName} is required`);
-    }
+  if (!process.env.MONGODB_URI) {
+    throw new Error('Environment variable MONGODB_URI is required');
   }
 
   return {
