@@ -38,7 +38,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   }, [product._id]);
 
   const isWishlisted = wishlistIds.includes(product._id) || localWishlisted;
-  const brandName = typeof product.brand === 'object' ? product.brand?.name : product.brand;
+  const brandName = product.brand && typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand;
   const { price: displayBase, original, hasDiscount, percent } = getDisplayPrice(product);
   const unitPrice = selectedSize
     ? getProductUnitPrice(product, selectedSize)

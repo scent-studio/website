@@ -45,7 +45,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(() => isInLocalWishlist(product._id));
   const [isHovered, setIsHovered] = useState(false);
   const { price, original, hasDiscount, percent } = getDisplayPrice(product as Product);
-  const brandName = typeof product.brand === 'object' ? product.brand?.name : product.brand;
+  const brandName = product.brand && typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand;
   const reviews = (product as Product).numReviews ?? (product as any).reviewCount ?? 0;
   const image = product.images?.[0] || '/placeholder-perfume.jpg';
 

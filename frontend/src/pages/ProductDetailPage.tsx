@@ -70,7 +70,7 @@ export default function ProductDetailPage() {
   if (error) return <ErrorState message={error} onRetry={() => slug && dispatch(fetchProduct(slug))} />;
   if (!product) return <ErrorState title="Product not found" message="The product you're looking for doesn't exist." />;
 
-  const brandName = typeof product.brand === 'object' ? (product.brand as any).name : product.brand;
+  const brandName = product.brand && typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand;
 
   return (
     <div className="bg-luxury-cream">
