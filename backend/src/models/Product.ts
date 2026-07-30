@@ -72,7 +72,7 @@ const productSchema = new mongoose.Schema(
     concentration: {
       type: String,
       enum: ['EDP', 'EDT', 'Parfum', 'Cologne'],
-      required: [true, 'Concentration is required'],
+      default: null,
     },
     topNotes: {
       type: [String],
