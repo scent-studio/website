@@ -67,7 +67,7 @@ function parseList(value?: string): string[] {
   return value.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
-function idOf(ref: Category | Brand | string | undefined): string {
+function idOf(ref: Category | string | undefined): string {
   if (!ref) return '';
   return typeof ref === 'object' ? ref._id : ref;
 }
