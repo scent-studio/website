@@ -12,8 +12,7 @@ import Loader from '../../components/ui/Loader';
 import ImageUpload from '../../components/admin/ImageUpload';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
-import { brandService } from '../../services/brandService';
-import type { Brand, Category, Gender, PerformanceLevel } from '../../types';
+import type { Category, Gender, PerformanceLevel } from '../../types';
 import toast from 'react-hot-toast';
 const GENDERS: Gender[] = ['male', 'female', 'unisex'];
 const PERFORMANCE: PerformanceLevel[] = [
@@ -34,7 +33,7 @@ const productSchema = z.object({
   price: z.string().min(1, 'Price is required'),
   discount: z.string().optional(),
   category: z.string().min(1, 'Category is required'),
-  brand: z.string().min(1, 'Brand is required'),
+  brand: z.string().optional(),
   gender: z.string().min(1, 'Gender is required'),
   stock: z.string().optional(),
   size: z.string().min(1, 'Size is required'),
@@ -80,7 +79,6 @@ export default function AdminProductFormPage() {
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
 
   const {
     register,
@@ -107,13 +105,9 @@ export default function AdminProductFormPage() {
   });
 
   useEffect(() => {
-    Promise.all([
-      categoryService.getAll({ isActive: true }),
-      brandService.getAll({ isActive: true }),
-    ])
-      .then(([catRes, brandRes]) => {
+    categoryService.getAll({ isActive: true })
+      .then((catRes) => {
         setCategories(catRes.data ?? []);
-        setBrands(brandRes.data ?? []);
       })
       .catch(() => {});
 
@@ -130,7 +124,6 @@ export default function AdminProductFormPage() {
             price: String(p.price ?? ''),
             discount: String(p.discount ?? 0),
             category: idOf(p.category),
-            brand: idOf(p.brand),
             gender: p.gender || '',
             stock: String(p.stock ?? p.stockQuantity ?? 0),
             size: primarySize?.size || '50ml',
@@ -177,7 +170,6 @@ export default function AdminProductFormPage() {
         price,
         discount: data.discount ? parseFloat(data.discount) : 0,
         category: data.category,
-        brand: data.brand,
         gender: data.gender as Gender,
         stock,
         sizes: [
@@ -292,15 +284,6 @@ export default function AdminProductFormPage() {
               {...register('category')}
             />
             <Select
-              label="Brand"
-              options={brands.map((b) => ({ value: b._id, label: b.name }))}
-              placeholder="Select brand"
-              error={errors.brand?.message}
-              {...register('brand')}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Select
               label="Gender"
               options={GENDERS.map((g) => ({
                 value: g,
@@ -310,14 +293,16 @@ export default function AdminProductFormPage() {
               error={errors.gender?.message}
               {...register('gender')}
             />
-            <Input label="Stock" type="number" min="0" {...register('stock')} />
           </div>
           <div className="grid grid-cols-2 gap-4">
+            <Input label="Stock" type="number" min="0" {...register('stock')} />
             <Select
               label="Season"
               options={optionalSelect(SEASONS)}
               {...register('season')}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <Select
               label="Occasion"
               options={optionalSelect(OCCASIONS)}
