@@ -17,7 +17,7 @@ const createProductRules = [
     .notEmpty().withMessage('Category is required')
     .isMongoId().withMessage('Invalid category ID'),
   body('brand')
-    .notEmpty().withMessage('Brand is required')
+    .optional()
     .isMongoId().withMessage('Invalid brand ID'),
   body('price')
     .notEmpty().withMessage('Price is required')
@@ -25,9 +25,6 @@ const createProductRules = [
   body('discount')
     .optional()
     .isFloat({ min: 0, max: 100 }).withMessage('Discount must be between 0 and 100'),
-  body('concentration')
-    .notEmpty().withMessage('Concentration is required')
-    .isIn(['EDP', 'EDT', 'Parfum', 'Cologne']).withMessage('Invalid concentration'),
   body('gender')
     .notEmpty().withMessage('Gender is required')
     .isIn(['male', 'female', 'unisex']).withMessage('Gender must be male, female, or unisex'),
