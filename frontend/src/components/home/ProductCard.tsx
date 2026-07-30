@@ -47,7 +47,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { price, original, hasDiscount, percent } = getDisplayPrice(product as Product);
   const brandName = product.brand && typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand;
   const reviews = (product as Product).numReviews ?? (product as any).reviewCount ?? 0;
-  const image = product.images?.[0] || '/placeholder-perfume.jpg';
+  const image = product.images?.[0] || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" fill="%23f0ebe3"><rect width="300" height="400"/><text x="150" y="200" text-anchor="middle" fill="%23b8a88a" font-size="16" font-family="serif">No Image</text></svg>');
 
   useEffect(() => {
     const sync = () => setIsWishlisted(isInLocalWishlist(product._id));
