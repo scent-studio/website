@@ -2,7 +2,6 @@ const asyncHandler = require('../utils/asyncHandler');
 const ApiResponse = require('../utils/ApiResponse');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const ApiError = require('../utils/ApiError');
 
 const storage = multer.memoryStorage();
@@ -26,23 +25,10 @@ const uploadImages = asyncHandler(async (req: any, res: any) => {
     throw ApiError.badRequest('No images uploaded');
   }
 
-  const uploadDir = path.join(__dirname, '../../uploads/products');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
-  const urls: string[] = [];
-
-  for (const file of req.files) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    const filename = `product-${uniqueSuffix}${ext}`;
-    const filepath = path.join(uploadDir, filename);
-
-    fs.writeFileSync(filepath, file.buffer);
-
-    urls.push(`/uploads/products/${filename}`);
-  }
+  const urls: string[] = req.files.map((file: any) => {
+    const base64 = file.buffer.toString('base64');
+    return `data:${file.mimetype};base64,${base64}`;
+  });
 
   res.status(200).json(ApiResponse.success({ urls }));
 });
