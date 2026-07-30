@@ -8,7 +8,6 @@ import CategoryShowcase from '../components/home/CategoryShowcase';
 import ProductGrid from '../components/home/ProductGrid';
 import BannerPromo from '../components/home/BannerPromo';
 import WhyChooseUs from '../components/home/WhyChooseUs';
-import Testimonials from '../components/home/Testimonials';
 import FAQSection from '../components/home/FAQSection';
 import CategoriesGrid from '../components/home/CategoriesGrid';
 import HowToPickSection from '../components/home/HowToPickSection';
@@ -25,9 +24,9 @@ export default function HomePage() {
     dispatch(fetchFeatured());
     dispatch(fetchBestSellers());
     dispatch(fetchNewArrivals());
-    dispatch(fetchProducts({ gender: 'female', limit: 4 }));
-    dispatch(fetchProducts({ gender: 'male', limit: 4 }));
-    dispatch(fetchProducts({ gender: 'unisex', limit: 4 }));
+    dispatch(fetchProducts({ filters: { gender: ['female'] }, limit: 4 }));
+    dispatch(fetchProducts({ filters: { gender: ['male'] }, limit: 4 }));
+    dispatch(fetchProducts({ filters: { gender: ['unisex'] }, limit: 4 }));
   }, [dispatch]);
 
   if (loading && featured.length === 0) return <FullPageLoader text="Welcome to Scent Studio" />;
@@ -56,7 +55,6 @@ export default function HomePage() {
       />
       <CategoriesGrid />
       <WhyChooseUs />
-      <Testimonials />
       <FAQSection />
       <NewsletterSection />
     </div>
