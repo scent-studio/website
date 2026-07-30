@@ -79,6 +79,7 @@ export default function AdminProductFormPage() {
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const {
     register,
@@ -149,6 +150,7 @@ export default function AdminProductFormPage() {
             metaTitle: p.metaTitle || '',
             metaDescription: p.metaDescription || '',
           });
+          setImageUrls(p.images || []);
         })
         .catch(() => toast.error('Failed to load product'))
         .finally(() => setLoading(false));
@@ -172,6 +174,7 @@ export default function AdminProductFormPage() {
         category: data.category,
         gender: data.gender as Gender,
         stock,
+        images: imageUrls,
         sizes: [
           {
             size: data.size,
@@ -397,7 +400,7 @@ export default function AdminProductFormPage() {
           <h3 className="text-sm font-serif text-luxury-gold tracking-wider uppercase">
             Product Images
           </h3>
-          <ImageUpload maxFiles={5} />
+          <ImageUpload maxFiles={5} onChange={setImageUrls} initialUrls={imageUrls} />
         </div>
 
         <div className="bg-luxury-white border border-luxury-border rounded-xl p-6 space-y-5 shadow-sm">

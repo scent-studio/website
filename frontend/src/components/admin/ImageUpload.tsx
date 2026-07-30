@@ -2,45 +2,77 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { uploadService } from '../../services/uploadService';
+import toast from 'react-hot-toast';
 
 interface ImageFile {
   id: string;
   file?: File;
   preview: string;
-  progress?: number;
+  uploadedUrl?: string;
+  uploading?: boolean;
 }
 
 interface ImageUploadProps {
   maxFiles?: number;
-  onUpload?: (files: ImageFile[]) => void;
+  onChange?: (urls: string[]) => void;
+  initialUrls?: string[];
   className?: string;
 }
 
-export default function ImageUpload({ maxFiles = 5, onUpload, className }: ImageUploadProps) {
-  const [images, setImages] = useState<ImageFile[]>([]);
+export default function ImageUpload({ maxFiles = 5, onChange, initialUrls = [], className }: ImageUploadProps) {
+  const [images, setImages] = useState<ImageFile[]>(
+    initialUrls.map((url) => ({ id: url, preview: url, uploadedUrl: url }))
+  );
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = (files: FileList | File[]) => {
-    const remaining = maxFiles - images.length;
-    const fileArray = Array.from(files).slice(0, remaining);
+  const notifyParent = (imgs: ImageFile[]) => {
+    const urls = imgs.filter((i) => i.uploadedUrl).map((i) => i.uploadedUrl!);
+    onChange?.(urls);
+  };
 
-    const newImages: ImageFile[] = fileArray.map((file) => ({
+  const uploadFiles = async (files: File[]) => {
+    const newImages: ImageFile[] = files.map((file) => ({
       id: Math.random().toString(36).slice(2),
       file,
       preview: URL.createObjectURL(file),
-      progress: 100,
+      uploading: true,
     }));
 
     const updated = [...images, ...newImages];
     setImages(updated);
-    onUpload?.(updated);
+
+    try {
+      const urls = await uploadService.uploadImages(files);
+      const updatedWithUrls = updated.map((img, i) => {
+        const urlIndex = newImages.findIndex((n) => n.id === img.id);
+        if (urlIndex >= 0) {
+          return { ...img, uploading: false, uploadedUrl: urls[urlIndex] };
+        }
+        return img;
+      });
+      setImages(updatedWithUrls);
+      notifyParent(updatedWithUrls);
+      toast.success(`${files.length} image(s) uploaded`);
+    } catch {
+      toast.error('Image upload failed');
+      const failed = updated.filter((img) => !newImages.some((n) => n.id === img.id));
+      setImages(failed);
+      notifyParent(failed);
+    }
+  };
+
+  const handleFiles = (fileList: FileList | File[]) => {
+    const remaining = maxFiles - images.length;
+    const fileArray = Array.from(fileList).slice(0, remaining);
+    if (fileArray.length > 0) uploadFiles(fileArray);
   };
 
   const removeImage = (id: string) => {
     const updated = images.filter((img) => img.id !== id);
     setImages(updated);
-    onUpload?.(updated);
+    notifyParent(updated);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -92,6 +124,11 @@ export default function ImageUpload({ maxFiles = 5, onUpload, className }: Image
                 className="relative group aspect-square border border-luxury-border overflow-hidden rounded-lg"
               >
                 <img src={img.preview} alt="Upload" className="w-full h-full object-cover" />
+                {img.uploading && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
                   <button
                     onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
@@ -100,14 +137,6 @@ export default function ImageUpload({ maxFiles = 5, onUpload, className }: Image
                     <X size={14} />
                   </button>
                 </div>
-                {img.progress !== undefined && img.progress < 100 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-luxury-ivory">
-                    <div
-                      className="h-full bg-luxury-gold transition-all duration-300"
-                      style={{ width: `${img.progress}%` }}
-                    />
-                  </div>
-                )}
               </motion.div>
             ))}
           </AnimatePresence>

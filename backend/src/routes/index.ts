@@ -19,6 +19,7 @@ const settingsRoutes = require('./settingsRoutes');
 const analyticsRoutes = require('./analyticsRoutes');
 const blogRoutes = require('./blogRoutes');
 const collectionRoutes = require('./collectionRoutes');
+const uploadRoutes = require('./uploadRoutes');
 
 router.use(defaultLimiter);
 
@@ -38,6 +39,7 @@ router.use('/settings', apiLimiter, settingsRoutes);
 router.use('/analytics', apiLimiter, analyticsRoutes);
 router.use('/blogs', apiLimiter, blogRoutes);
 router.use('/collections', apiLimiter, collectionRoutes);
+router.use('/upload', apiLimiter, uploadRoutes);
 
 router.get('/health', (req: any, res: any) => {
   res.status(200).json({
