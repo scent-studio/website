@@ -161,7 +161,7 @@ function AppContent() {
         <Route path="/collections/:slug" element={<Layout><PageTransition><CollectionDetailPage /></PageTransition></Layout>} />
         <Route path="/wishlist" element={<Layout><PageTransition><WishlistPage /></PageTransition></Layout>} />
         <Route path="/cart" element={<Layout><PageTransition><CartPage /></PageTransition></Layout>} />
-        <Route path="/checkout" element={<PageTransition><CheckoutPage /></PageTransition>} />
+        <Route path="/checkout" element={<Layout><PageTransition><CheckoutPage /></PageTransition></Layout>} />
         <Route path="/order-success/:id" element={<Layout><PageTransition><OrderSuccessPage /></PageTransition></Layout>} />
         <Route path="/login" element={<Layout><PageTransition><LoginPage /></PageTransition></Layout>} />
         <Route path="/register" element={<Layout><PageTransition><RegisterPage /></PageTransition></Layout>} />
