@@ -17,7 +17,7 @@ export default function AdminCouponsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
-  const [form, setForm] = useState({ code: '', type: 'percentage' as 'percentage' | 'fixed', value: '', minOrder: '', maxDiscount: '', usageLimit: '' });
+  const [form, setForm] = useState({ code: '', type: 'percentage' as 'percentage' | 'fixed', value: '', minOrder: '', maxDiscount: '', usageLimit: '', expiresAt: '' });
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -34,7 +34,7 @@ export default function AdminCouponsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ code: '', type: 'percentage', value: '', minOrder: '', maxDiscount: '', usageLimit: '' });
+    setForm({ code: '', type: 'percentage', value: '', minOrder: '', maxDiscount: '', usageLimit: '', expiresAt: '' });
     setModalOpen(true);
   };
 
@@ -47,12 +47,14 @@ export default function AdminCouponsPage() {
       minOrder: String(c.minOrder || ''),
       maxDiscount: String(c.maxDiscount || ''),
       usageLimit: String(c.usageLimit || ''),
+      expiresAt: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
     });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.code.trim() || !form.value) return toast.error('Code and value are required');
+    if (!form.expiresAt) return toast.error('Expiry date is required');
     setSaving(true);
     try {
       const payload = {
@@ -62,6 +64,7 @@ export default function AdminCouponsPage() {
         minOrder: form.minOrder ? parseFloat(form.minOrder) : 0,
         maxDiscount: form.maxDiscount ? parseFloat(form.maxDiscount) : 0,
         usageLimit: form.usageLimit ? parseInt(form.usageLimit) : 0,
+        expiresAt: new Date(form.expiresAt).toISOString(),
       };
       if (editing) {
         await couponService.update(editing._id, payload);
@@ -103,6 +106,7 @@ export default function AdminCouponsPage() {
     )},
     { key: 'minOrder', label: 'Min Order', render: (c: Coupon) => <span className="text-xs text-luxury-steel">{c.minOrder ? formatPrice(c.minOrder) : '-'}</span> },
     { key: 'usageCount', label: 'Used', render: (c: Coupon) => <span className="text-xs text-luxury-steel">{c.usageCount}/{c.usageLimit || '\u221E'}</span> },
+    { key: 'expiresAt', label: 'Expires', render: (c: Coupon) => <span className="text-xs text-luxury-steel">{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '-'}</span> },
     { key: 'isActive', label: 'Status', render: (c: Coupon) => <Badge variant={c.isActive ? 'green' : 'red'} size="sm">{c.isActive ? 'Active' : 'Inactive'}</Badge> },
     { key: 'actions', label: 'Actions', render: (c: Coupon) => (
       <div className="flex items-center gap-2">
@@ -132,6 +136,7 @@ export default function AdminCouponsPage() {
             <Input label="Max Discount" type="number" value={form.maxDiscount} onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })} />
             <Input label="Usage Limit" type="number" value={form.usageLimit} onChange={(e) => setForm({ ...form, usageLimit: e.target.value })} />
           </div>
+          <Input label="Expiry Date" type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} />
           <div className="flex items-center gap-3 pt-2">
             <Button variant="primary" onClick={handleSave} isLoading={saving}>{editing ? 'Update' : 'Create'}</Button>
             <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
