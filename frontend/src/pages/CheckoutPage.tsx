@@ -5,10 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
-import { CreditCard, Banknote, ShieldCheck, Lock } from 'lucide-react';
-import PageHeader from '../components/layout/PageHeader';
+import { ChevronDown, ChevronUp, ChevronRight, Tag, Lock, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Input from '../components/ui/Input';
-import Textarea from '../components/ui/Textarea';
 import Button from '../components/ui/Button';
 import { formatPrice } from '../lib/utils';
 import {
@@ -19,6 +18,7 @@ import {
   calcTax,
 } from '../lib/cartStorage';
 import { orderService } from '../services/orderService';
+import { couponService } from '../services/couponService';
 import { rememberGuestOrder } from '../lib/guestOrders';
 import type { LocalCartItem, PaymentMethod } from '../types';
 import toast from 'react-hot-toast';
@@ -29,18 +29,17 @@ const checkoutSchema = z.object({
   lastName: z.string().min(1, 'Required'),
   phone: z.string().min(1, 'Required'),
   shippingStreet: z.string().min(1, 'Required'),
+  shippingApartment: z.string().optional(),
   shippingCity: z.string().min(1, 'Required'),
-  shippingState: z.string().min(1, 'Required'),
-  shippingZip: z.string().min(1, 'Required'),
+  shippingZip: z.string().optional(),
   shippingCountry: z.string().min(1, 'Required'),
-  sameAsBilling: z.boolean(),
+  billingSame: z.boolean(),
   billingStreet: z.string().optional(),
+  billingApartment: z.string().optional(),
   billingCity: z.string().optional(),
-  billingState: z.string().optional(),
   billingZip: z.string().optional(),
   billingCountry: z.string().optional(),
   paymentMethod: z.enum(['cash_on_delivery', 'bank_transfer']),
-  notes: z.string().optional(),
 });
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
@@ -50,6 +49,12 @@ export default function CheckoutPage() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const [items, setItems] = useState<LocalCartItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [discountOpen, setDiscountOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponId, setCouponId] = useState('');
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   useEffect(() => {
     const cart = getLocalCart();
@@ -61,11 +66,10 @@ export default function CheckoutPage() {
     setItems(cart);
   }, [navigate]);
 
-  const totalPrice = getCartSubtotal(items);
-  const shipping = calcShipping(totalPrice);
-  const tax = calcTax(totalPrice);
-  const discount = 0;
-  const total = totalPrice + shipping + tax - discount;
+  const subtotal = getCartSubtotal(items);
+  const shipping = calcShipping(subtotal);
+  const tax = calcTax(subtotal);
+  const total = subtotal + shipping + tax - couponDiscount;
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -75,13 +79,32 @@ export default function CheckoutPage() {
       lastName: user?.name?.split(' ').slice(1).join(' ') || '',
       phone: user?.phone || '',
       shippingCountry: 'Pakistan',
-      sameAsBilling: true,
+      billingSame: true,
       paymentMethod: 'cash_on_delivery',
     },
   });
 
-  const sameAsBilling = watch('sameAsBilling');
+  const billingSame = watch('billingSame');
   const paymentMethod = watch('paymentMethod');
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setApplyingCoupon(true);
+    try {
+      const res = await couponService.validate(couponCode, subtotal);
+      if (res.success && res.data?.discountAmount) {
+        setCouponDiscount(res.data.discountAmount);
+        setCouponId(res.data.coupon?._id || '');
+        toast.success('Coupon applied!');
+      } else {
+        toast.error(res.message || 'Invalid coupon');
+      }
+    } catch {
+      toast.error('Invalid coupon code');
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
 
   const onSubmit = async (data: CheckoutForm) => {
     setSubmitting(true);
@@ -90,9 +113,10 @@ export default function CheckoutPage() {
         name: `${data.firstName} ${data.lastName}`.trim(),
         phone: data.phone,
         street: (data[`${prefix}Street` as keyof CheckoutForm] as string) || data.shippingStreet,
+        apartment: (data[`${prefix}Apartment` as keyof CheckoutForm] as string) || '',
         city: (data[`${prefix}City` as keyof CheckoutForm] as string) || data.shippingCity,
-        state: (data[`${prefix}State` as keyof CheckoutForm] as string) || data.shippingState,
-        zip: (data[`${prefix}Zip` as keyof CheckoutForm] as string) || data.shippingZip,
+        state: '',
+        zip: (data[`${prefix}Zip` as keyof CheckoutForm] as string) || '',
         country: (data[`${prefix}Country` as keyof CheckoutForm] as string) || data.shippingCountry,
       });
 
@@ -106,13 +130,14 @@ export default function CheckoutPage() {
           price: item.price,
         })),
         shippingAddress: makeAddress('shipping'),
-        billingAddress: data.sameAsBilling ? makeAddress('shipping') : makeAddress('billing'),
+        billingAddress: data.billingSame ? makeAddress('shipping') : makeAddress('billing'),
         paymentMethod: data.paymentMethod as PaymentMethod,
-        subtotal: totalPrice,
+        subtotal,
         tax,
         shippingCost: shipping,
-        discount,
+        discount: couponDiscount,
         total,
+        coupon: couponId || undefined,
         ...(isAuthenticated
           ? {}
           : {
@@ -143,162 +168,312 @@ export default function CheckoutPage() {
     }
   };
 
-  const sectionTitle = (label: string) => (
-    <h3 className="text-base font-serif text-luxury-gold tracking-wider uppercase mb-5">
-      {label}
-    </h3>
-  );
-
   return (
-    <div>
-      <PageHeader
-        title="Checkout"
-        subtitle="Complete your order"
-        breadcrumbs={[{ label: 'Home', path: '/' }, { label: 'Cart', path: '/cart' }, { label: 'Checkout' }]}
-      />
-      <section className="py-16 bg-luxury-cream">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="lg:col-span-2 space-y-8">
+    <div className="min-h-screen bg-white">
+      {/* Top bar */}
+      <div className="bg-luxury-white border-b border-luxury-border">
+        <div className="max-w-xl mx-auto px-6 py-4 flex items-center justify-center">
+          <Link to="/" className="text-xl font-serif text-luxury-charcoal tracking-[0.12em]">
+            {import.meta.env.VITE_STORE_NAME || 'Elyscents'}
+          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-xl mx-auto px-6 py-8">
+        {/* Collapsible Order Summary (mobile top) */}
+        <div className="lg:hidden mb-6 border border-luxury-border rounded-lg overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setSummaryOpen(!summaryOpen)}
+            className="w-full flex items-center justify-between px-5 py-4 bg-luxury-white"
+          >
+            <span className="text-sm text-luxury-charcoal font-medium">Order summary</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-luxury-charcoal">{formatPrice(total)}</span>
+              {summaryOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </div>
+          </button>
+          <AnimatePresence>
+            {summaryOpen && (
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: 'auto' }}
+                exit={{ height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="px-5 pb-4 space-y-3">
+                  {items.map((item) => (
+                    <div key={`${item.product._id}-${item.size}`} className="flex items-center gap-3">
+                      <div className="relative h-12 w-12 rounded-md overflow-hidden bg-luxury-ivory shrink-0">
+                        <img src={item.product.images?.[0] || item.image} alt={item.product.name} className="h-full w-full object-cover" />
+                        <span className="absolute -top-1 -right-1 bg-luxury-steel text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center">{item.quantity}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-luxury-charcoal truncate">{item.product.name}</p>
+                        {item.size && <p className="text-xs text-luxury-steel">{item.size}</p>}
+                      </div>
+                      <span className="text-sm text-luxury-charcoal">{formatPrice(item.price * item.quantity)}</span>
+                    </div>
+                  ))}
+                  <div className="border-t border-luxury-border pt-3 space-y-2">
+                    <div className="flex justify-between text-sm text-luxury-steel">
+                      <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-luxury-steel">
+                      <span>Shipping</span><span>{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
+                    </div>
+                    {couponDiscount > 0 && (
+                      <div className="flex justify-between text-sm text-luxury-green">
+                        <span>Discount</span><span>-{formatPrice(couponDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-base font-medium text-luxury-charcoal pt-2 border-t border-luxury-border">
+                      <span>Total</span><span>PKR {formatPrice(total)}</span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {/* Contact */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-medium text-luxury-charcoal">Contact</h2>
               {!isAuthenticated && (
-                <div className="flex flex-wrap items-center justify-between gap-3 border border-luxury-border bg-luxury-white px-5 py-4">
-                  <p className="text-sm text-luxury-steel">
-                    You are checking out as a guest — no account needed.
-                  </p>
-                  <Link
-                    to="/login?redirect=/checkout"
-                    className="text-sm text-luxury-charcoal underline underline-offset-4 hover:text-luxury-gold-dark transition-colors"
+                <Link to="/login?redirect=/checkout" className="text-sm text-luxury-gold-dark hover:underline flex items-center gap-1">
+                  Sign in <ChevronRight size={14} />
+                </Link>
+              )}
+            </div>
+            <Input
+              type="email"
+              placeholder="Email or mobile phone number"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+            <label className="flex items-center gap-2 mt-3 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 rounded border-luxury-border accent-luxury-gold" defaultChecked />
+              <span className="text-sm text-luxury-steel">Email me with news and offers</span>
+            </label>
+          </div>
+
+          {/* Delivery */}
+          <div className="mb-8">
+            <h2 className="text-xl font-medium text-luxury-charcoal mb-4">Delivery</h2>
+
+            <div className="mb-4">
+              <label className="block text-sm text-luxury-steel mb-1.5">Country/Region</label>
+              <select
+                {...register('shippingCountry')}
+                className="w-full px-4 py-3 border border-luxury-border rounded-lg text-luxury-charcoal bg-luxury-white outline-none focus:border-luxury-gold focus:ring-1 focus:ring-luxury-gold/20 transition-all"
+              >
+                <option value="Pakistan">Pakistan</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <Input placeholder="First name" error={errors.firstName?.message} {...register('firstName')} />
+              <Input placeholder="Last name" error={errors.lastName?.message} {...register('lastName')} />
+            </div>
+
+            <div className="mb-3">
+              <Input placeholder="Address" error={errors.shippingStreet?.message} {...register('shippingStreet')} />
+            </div>
+
+            <div className="mb-3">
+              <Input placeholder="Apartment, suite, etc. (optional)" {...register('shippingApartment')} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <Input placeholder="City" error={errors.shippingCity?.message} {...register('shippingCity')} />
+              <Input placeholder="Postal code (optional)" {...register('shippingZip')} />
+            </div>
+
+            <div className="mb-3">
+              <Input type="tel" placeholder="Phone" error={errors.phone?.message} {...register('phone')} />
+            </div>
+
+            <label className="flex items-center gap-2 mt-3 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 rounded border-luxury-border accent-luxury-gold" defaultChecked />
+              <span className="text-sm text-luxury-steel">Save this information for next time</span>
+            </label>
+          </div>
+
+          {/* Shipping method */}
+          <div className="mb-8">
+            <h2 className="text-xl font-medium text-luxury-charcoal mb-4">Shipping method</h2>
+            <div className="flex items-center justify-between p-4 border border-luxury-charcoal rounded-lg bg-luxury-white">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full border-4 border-luxury-charcoal" />
+                <span className="text-sm text-luxury-charcoal">Standard</span>
+              </div>
+              <span className="text-sm text-luxury-charcoal">{formatPrice(shipping)}</span>
+            </div>
+          </div>
+
+          {/* Payment */}
+          <div className="mb-8">
+            <h2 className="text-xl font-medium text-luxury-charcoal mb-1">Payment</h2>
+            <p className="text-sm text-luxury-steel mb-4">All transactions are secure and encrypted.</p>
+
+            <div className="space-y-3">
+              <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                paymentMethod === 'cash_on_delivery' ? 'border-luxury-charcoal' : 'border-luxury-border hover:border-luxury-charcoal/50'
+              }`}>
+                <input type="radio" value="cash_on_delivery" {...register('paymentMethod')} className="accent-luxury-gold" />
+                <span className="text-sm font-medium text-luxury-charcoal flex-1">Cash on Delivery (COD)</span>
+              </label>
+
+              <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                paymentMethod === 'bank_transfer' ? 'border-luxury-charcoal' : 'border-luxury-border hover:border-luxury-charcoal/50'
+              }`}>
+                <input type="radio" value="bank_transfer" {...register('paymentMethod')} className="accent-luxury-gold" />
+                <span className="text-sm font-medium text-luxury-charcoal flex-1">Bank Transfer</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Billing address */}
+          <div className="mb-8">
+            <h2 className="text-xl font-medium text-luxury-charcoal mb-4">Billing address</h2>
+            <div className="space-y-3">
+              <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                billingSame ? 'border-luxury-charcoal' : 'border-luxury-border hover:border-luxury-charcoal/50'
+              }`}>
+                <input type="radio" {...register('billingSame')} value="true" className="accent-luxury-gold" />
+                <span className="text-sm text-luxury-charcoal">Same as shipping address</span>
+              </label>
+
+              <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                !billingSame ? 'border-luxury-charcoal' : 'border-luxury-border hover:border-luxury-charcoal/50'
+              }`}>
+                <input type="radio" {...register('billingSame')} value="false" className="accent-luxury-gold" />
+                <span className="text-sm text-luxury-charcoal">Use a different billing address</span>
+              </label>
+
+              {!billingSame && (
+                <div className="mt-4 space-y-3 pl-0 border-l-0">
+                  <Input placeholder="Address" {...register('billingStreet')} />
+                  <Input placeholder="Apartment, suite, etc. (optional)" {...register('billingApartment')} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input placeholder="City" {...register('billingCity')} />
+                    <Input placeholder="Postal code (optional)" {...register('billingZip')} />
+                  </div>
+                  <select
+                    {...register('billingCountry')}
+                    className="w-full px-4 py-3 border border-luxury-border rounded-lg text-luxury-charcoal bg-luxury-white outline-none focus:border-luxury-gold focus:ring-1 focus:ring-luxury-gold/20 transition-all"
                   >
-                    Sign in instead
-                  </Link>
+                    <option value="Pakistan">Pakistan</option>
+                  </select>
                 </div>
               )}
+            </div>
+          </div>
 
-              <div className="bg-luxury-white border border-luxury-border p-6 space-y-5">
-                {sectionTitle('1. Customer Information')}
-                <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="First Name" placeholder="Ayesha" error={errors.firstName?.message} {...register('firstName')} />
-                  <Input label="Last Name" placeholder="Khan" error={errors.lastName?.message} {...register('lastName')} />
+          {/* Add discount */}
+          <div className="mb-8">
+            <button
+              type="button"
+              onClick={() => setDiscountOpen(!discountOpen)}
+              className="flex items-center gap-2 text-sm text-luxury-charcoal hover:text-luxury-gold-dark transition-colors"
+            >
+              <Tag size={16} />
+              <span>Add discount</span>
+              {discountOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            <AnimatePresence>
+              {discountOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex gap-2 mt-3">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="Discount code"
+                      className="flex-1 px-4 py-2.5 border border-luxury-border rounded-lg text-sm text-luxury-charcoal outline-none focus:border-luxury-gold transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={applyingCoupon || !couponCode.trim()}
+                      className="px-4 py-2.5 text-sm font-medium text-luxury-charcoal border border-luxury-border rounded-lg hover:bg-luxury-ivory transition-colors disabled:opacity-40"
+                    >
+                      {applyingCoupon ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Desktop Order Summary */}
+          <div className="hidden lg:block mb-6 border border-luxury-border rounded-lg p-5">
+            <div className="space-y-3">
+              {items.map((item) => (
+                <div key={`${item.product._id}-${item.size}`} className="flex items-center gap-3">
+                  <div className="relative h-12 w-12 rounded-md overflow-hidden bg-luxury-ivory shrink-0">
+                    <img src={item.product.images?.[0] || item.image} alt={item.product.name} className="h-full w-full object-cover" />
+                    <span className="absolute -top-1 -right-1 bg-luxury-steel text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center">{item.quantity}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-luxury-charcoal truncate">{item.product.name}</p>
+                    {item.size && <p className="text-xs text-luxury-steel">{item.size}</p>}
+                  </div>
+                  <span className="text-sm text-luxury-charcoal">{formatPrice(item.price * item.quantity)}</span>
                 </div>
-                <Input label="Phone" type="tel" placeholder="+92 300 1234567" error={errors.phone?.message} {...register('phone')} />
+              ))}
+            </div>
+            <div className="border-t border-luxury-border mt-3 pt-3 space-y-2">
+              <div className="flex justify-between text-sm text-luxury-steel">
+                <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
               </div>
-
-              <div className="bg-luxury-white border border-luxury-border p-6 space-y-5">
-                {sectionTitle('2. Shipping Address')}
-                <Input label="Street Address" placeholder="House 12, Street 5" error={errors.shippingStreet?.message} {...register('shippingStreet')} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="City" placeholder="Lahore" error={errors.shippingCity?.message} {...register('shippingCity')} />
-                  <Input label="Province" placeholder="Punjab" error={errors.shippingState?.message} {...register('shippingState')} />
+              <div className="flex justify-between text-sm text-luxury-steel">
+                <span>Shipping</span><span>{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
+              </div>
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-sm text-luxury-green">
+                  <span>Discount</span><span>-{formatPrice(couponDiscount)}</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="Postal Code" placeholder="54000" error={errors.shippingZip?.message} {...register('shippingZip')} />
-                  <Input label="Country" placeholder="Pakistan" error={errors.shippingCountry?.message} {...register('shippingCountry')} />
-                </div>
-              </div>
-
-              <div className="bg-luxury-white border border-luxury-border p-6 space-y-5">
-                {sectionTitle('3. Billing Address')}
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" {...register('sameAsBilling')} className="w-4 h-4 accent-luxury-gold" />
-                  <span className="text-sm text-luxury-charcoal">Same as shipping address</span>
-                </label>
-                {!sameAsBilling && (
-                  <div className="space-y-4 mt-4">
-                    <Input label="Street Address" {...register('billingStreet')} />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Input label="City" {...register('billingCity')} />
-                      <Input label="Province" {...register('billingState')} />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Input label="Postal Code" {...register('billingZip')} />
-                      <Input label="Country" {...register('billingCountry')} />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-luxury-white border border-luxury-border p-6 space-y-5">
-                {sectionTitle('4. Payment Method')}
-                <label className={`flex items-center gap-4 p-4 border cursor-pointer transition-colors ${paymentMethod === 'cash_on_delivery' ? 'border-luxury-charcoal bg-luxury-warm' : 'border-luxury-border hover:border-luxury-charcoal/40'}`}>
-                  <input type="radio" value="cash_on_delivery" {...register('paymentMethod')} className="accent-luxury-gold" />
-                  <Banknote size={20} className="text-luxury-gold-dark" />
-                  <div>
-                    <p className="text-sm font-medium text-luxury-charcoal">Cash on Delivery</p>
-                    <p className="text-xs text-luxury-steel">Pay when your order arrives</p>
-                  </div>
-                </label>
-                <label className={`flex items-center gap-4 p-4 border cursor-pointer transition-colors ${paymentMethod === 'bank_transfer' ? 'border-luxury-charcoal bg-luxury-warm' : 'border-luxury-border hover:border-luxury-charcoal/40'}`}>
-                  <input type="radio" value="bank_transfer" {...register('paymentMethod')} className="accent-luxury-gold" />
-                  <CreditCard size={20} className="text-luxury-gold-dark" />
-                  <div>
-                    <p className="text-sm font-medium text-luxury-charcoal">Bank Transfer</p>
-                    <p className="text-xs text-luxury-steel">We will share account details after order</p>
-                  </div>
-                </label>
-                <Textarea label="Order Notes (optional)" placeholder="Delivery instructions..." {...register('notes')} />
-              </div>
-
-              <div className="lg:hidden bg-luxury-white border border-luxury-border p-6 space-y-4">
-                {sectionTitle('5. Order Review')}
-                {items.map((item) => (
-                  <div key={`${item.product._id}-${item.size}`} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-3">
-                      <img src={item.product.images?.[0] || item.image} alt={item.product.name} className="h-12 w-12 object-cover" />
-                      <div>
-                        <p className="text-luxury-charcoal">{item.product.name}</p>
-                        <p className="text-xs text-luxury-steel">{item.size} · Qty {item.quantity}</p>
-                      </div>
-                    </div>
-                    <p className="text-luxury-charcoal font-medium">{formatPrice(item.price * item.quantity)}</p>
-                  </div>
-                ))}
-                <div className="h-px bg-luxury-border my-2" />
-                <div className="flex justify-between text-sm text-luxury-steel"><span>Subtotal</span><span>{formatPrice(totalPrice)}</span></div>
-                <div className="flex justify-between text-sm text-luxury-steel"><span>Shipping</span><span>{shipping === 0 ? 'Complimentary' : formatPrice(shipping)}</span></div>
-                {tax > 0 && <div className="flex justify-between text-sm text-luxury-steel"><span>Tax</span><span>{formatPrice(tax)}</span></div>}
-                <div className="flex justify-between text-lg font-serif text-luxury-charcoal"><span>Total</span><span>{formatPrice(total)}</span></div>
-              </div>
-
-              <div className="pt-4">
-                <Button type="submit" variant="primary" size="lg" className="w-full" isLoading={submitting}>
-                  Place Order — {formatPrice(total)}
-                </Button>
-                <p className="flex items-center justify-center gap-1.5 text-xs text-luxury-steel mt-3">
-                  <Lock size={12} /> Secure checkout · We never share your details
-                </p>
-              </div>
-            </form>
-
-            <div className="hidden lg:block">
-              <div className="sticky top-28 bg-luxury-white border border-luxury-border p-6 space-y-4 shadow-soft">
-                <h3 className="text-base font-serif text-luxury-gold tracking-wider uppercase">Order Summary</h3>
-                {items.map((item) => (
-                  <div key={`${item.product._id}-${item.size}`} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-3">
-                      <img src={item.product.images?.[0] || item.image} alt={item.product.name} className="h-12 w-12 object-cover" />
-                      <div>
-                        <p className="text-luxury-charcoal">{item.product.name}</p>
-                        <p className="text-xs text-luxury-steel">{item.size} · Qty {item.quantity}</p>
-                      </div>
-                    </div>
-                    <p className="text-luxury-charcoal font-medium">{formatPrice(item.price * item.quantity)}</p>
-                  </div>
-                ))}
-                <div className="h-px bg-luxury-border my-2" />
-                <div className="flex justify-between text-sm text-luxury-steel"><span>Subtotal</span><span>{formatPrice(totalPrice)}</span></div>
-                <div className="flex justify-between text-sm text-luxury-steel"><span>Shipping</span><span>{shipping === 0 ? 'Complimentary' : formatPrice(shipping)}</span></div>
-                {tax > 0 && <div className="flex justify-between text-sm text-luxury-steel"><span>Tax</span><span>{formatPrice(tax)}</span></div>}
-                <div className="flex justify-between text-lg font-serif text-luxury-charcoal"><span>Total</span><span>{formatPrice(total)}</span></div>
-                <div className="flex items-start gap-2 pt-3 text-xs text-luxury-steel">
-                  <ShieldCheck size={14} className="text-luxury-gold-dark shrink-0 mt-0.5" />
-                  <span>14 Days Easy Refund. Secure payment. Delivery across Pakistan.</span>
-                </div>
+              )}
+              <div className="flex justify-between text-base font-medium text-luxury-charcoal pt-2 border-t border-luxury-border">
+                <span>Total</span><span>PKR {formatPrice(total)}</span>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+
+          {/* Mobile Total + CTA */}
+          <div className="lg:hidden mb-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-lg font-medium text-luxury-charcoal">Total</span>
+              <span className="text-lg font-medium text-luxury-charcoal">PKR {formatPrice(total)}</span>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            className="w-full rounded-lg"
+            isLoading={submitting}
+          >
+            <Lock size={16} />
+            Complete order
+          </Button>
+
+          <div className="flex items-center justify-center gap-2 mt-4 mb-8">
+            <Lock size={12} className="text-luxury-steel" />
+            <span className="text-xs text-luxury-steel">All transactions are secure and encrypted</span>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

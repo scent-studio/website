@@ -3,7 +3,7 @@ import type { Coupon, ApiResponse } from '../types';
 
 export const couponService = {
   async validate(code: string, orderAmount?: number) {
-    const response = await api.post<ApiResponse<Coupon & { discountAmount?: number }>>('/coupons/validate', {
+    const response = await api.post<ApiResponse<{ coupon: Coupon; discountAmount: number; finalAmount?: number }>>('/coupons/validate', {
       code,
       orderAmount,
     });

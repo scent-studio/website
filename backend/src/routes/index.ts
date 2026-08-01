@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 
-const { defaultLimiter, apiLimiter } = require('../middleware/rateLimiter');
-
 const authRoutes = require('./authRoutes');
 const productRoutes = require('./productRoutes');
 const categoryRoutes = require('./categoryRoutes');
@@ -21,25 +19,23 @@ const blogRoutes = require('./blogRoutes');
 const collectionRoutes = require('./collectionRoutes');
 const uploadRoutes = require('./uploadRoutes');
 
-router.use(defaultLimiter);
-
 router.use('/auth', authRoutes);
-router.use('/products', apiLimiter, productRoutes);
-router.use('/categories', apiLimiter, categoryRoutes);
-router.use('/brands', apiLimiter, brandRoutes);
-router.use('/orders', apiLimiter, orderRoutes);
-router.use('/coupons', apiLimiter, couponRoutes);
-router.use('/reviews', apiLimiter, reviewRoutes);
-router.use('/cart', apiLimiter, cartRoutes);
-router.use('/wishlist', apiLimiter, wishlistRoutes);
-router.use('/banners', apiLimiter, bannerRoutes);
+router.use('/products', productRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/brands', brandRoutes);
+router.use('/orders', orderRoutes);
+router.use('/coupons', couponRoutes);
+router.use('/reviews', reviewRoutes);
+router.use('/cart', cartRoutes);
+router.use('/wishlist', wishlistRoutes);
+router.use('/banners', bannerRoutes);
 router.use('/newsletter', newsletterRoutes);
 router.use('/contact', contactRoutes);
-router.use('/settings', apiLimiter, settingsRoutes);
-router.use('/analytics', apiLimiter, analyticsRoutes);
-router.use('/blogs', apiLimiter, blogRoutes);
-router.use('/collections', apiLimiter, collectionRoutes);
-router.use('/upload', apiLimiter, uploadRoutes);
+router.use('/settings', settingsRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/blogs', blogRoutes);
+router.use('/collections', collectionRoutes);
+router.use('/upload', uploadRoutes);
 
 router.get('/health', (req: any, res: any) => {
   res.status(200).json({
