@@ -56,7 +56,7 @@ export default function ContactPage() {
         breadcrumbs={[{ label: 'Home', path: '/' }, { label: 'Contact' }]}
       />
 
-      <section className="py-16 md:py-20 bg-luxury-cream">
+      <section className="py-16 md:py-5 bg-luxury-cream">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
             <ScrollReveal variant="slideInLeft">

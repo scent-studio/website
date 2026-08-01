@@ -53,7 +53,7 @@ const cardVariants = {
 
 export default function CategoriesGrid() {
   return (
-    <section className="py-20 bg-luxury-cream">
+    <section className="py-10 bg-luxury-cream">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionTitle
           title="Shop the Best Perfumes"

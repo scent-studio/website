@@ -40,7 +40,7 @@ export default function ProductGrid({
   viewAllLink,
 }: ProductGridProps) {
   return (
-    <section className={cn('py-20 bg-luxury-cream', className)}>
+    <section className={cn('py-10 bg-luxury-cream', className)}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {title && <SectionTitle title={title} subtitle={subtitle} />}
         <div className={cn('grid gap-6', columnsMap[columns])}>

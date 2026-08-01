@@ -36,11 +36,11 @@ export default function Layout({ children, className, showAnnouncement = true }:
                   {Array.from({ length: 4 }).map((_, i) => (
                     <span key={i} className="inline-flex items-center px-8">
                       <span className="text-[10px] mr-2">🇵🇰</span>
-                      Azadi Sale — Up to 30% off with code AZADI
+                      {/* Azadi Sale — Up to 30% off with code AZADI */}
                       <span className="mx-8 text-white/40" aria-hidden="true">
                         ★
                       </span>
-                      Free shipping on orders over Rs. 15,000
+                      Free shipping on orders over Rs. 2,000
                       <span className="mx-8 text-white/40" aria-hidden="true">
                         ★
                       </span>
