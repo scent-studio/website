@@ -60,10 +60,12 @@ html[data-theme='dark'] {
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-luxury-cream text-luxury-charcoal font-sans antialiased;
+    overflow-x: hidden;
   }
 
   html.theme-transition,

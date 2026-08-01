@@ -18,7 +18,7 @@ export default function Layout({ children, className, showAnnouncement = true }:
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-luxury-cream text-luxury-charcoal flex flex-col">
+    <div className="min-h-screen bg-luxury-cream text-luxury-charcoal flex flex-col overflow-x-hidden">
       <div className="fixed top-0 left-0 right-0 z-40">
         {showAnnouncement && (
           <div
