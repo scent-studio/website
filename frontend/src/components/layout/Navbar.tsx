@@ -90,11 +90,13 @@ export default function Navbar({ onSearchOpen, onCartOpen, onMobileMenuOpen }: N
           </button>
 
           <Link to="/" className="flex-shrink-0">
-            <img
-              src="/uploads/logo/logo.jpeg"
+            {/* <img
+              src="public/uploads/logo/logo.jpeg"
               alt="Scent Studio"
               className="h-10 md:h-12 w-auto"
-            />
+            /> */}
+                          <span className="text-2xl font-serif text-luxury-charcoal tracking-[0.12em]">Scent Studio</span>
+
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
