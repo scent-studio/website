@@ -14,11 +14,25 @@ interface GetProductsParams {
   fragranceFamily?: string;
   inStock?: boolean;
   tags?: string;
+  isFeatured?: boolean;
+  isTrending?: boolean;
+  isBestSeller?: boolean;
+  isNewArrival?: boolean;
+  isGiftSet?: boolean;
 }
 
 export const productService = {
   async getProducts(params: GetProductsParams = {}) {
-    const response = await api.get<PaginatedResponse<Product>>('/products', { params });
+    const response = await api.get<PaginatedResponse<Product>>('/products', {
+      params: {
+        ...params,
+        isFeatured: params.isFeatured ? 'true' : undefined,
+        isTrending: params.isTrending ? 'true' : undefined,
+        isBestSeller: params.isBestSeller ? 'true' : undefined,
+        isNewArrival: params.isNewArrival ? 'true' : undefined,
+        isGiftSet: params.isGiftSet ? 'true' : undefined,
+      },
+    });
     return response.data;
   },
 

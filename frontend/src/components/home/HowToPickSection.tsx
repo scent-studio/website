@@ -62,7 +62,7 @@ export default function HowToPickSection({ className }: HowToPickSectionProps) {
           >
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-luxury-border bg-luxury-ivory shadow-card">
               <img
-                src="/public/uploads/categories/oudh-royale.png"
+                src="/uploads/categories/oudh-royale.png"
                 alt="Curated perfume tester box"
                 className="absolute inset-0 w-full h-full object-cover"
               />

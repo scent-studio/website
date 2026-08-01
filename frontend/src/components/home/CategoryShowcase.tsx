@@ -5,11 +5,11 @@ import { cn } from '../../lib/utils';
 import SectionTitle from '../ui/SectionTitle';
 
 const categories = [
-  { name: 'Floral', slug: 'floral', image: '/public//uploads/categories/lamour-eclat.png', description: 'Elegant & Timeless' },
-  { name: 'Oriental', slug: 'oriental', image: '/public//uploads/categories/harmonia.png', description: 'Warm & Sensual' },
-  { name: 'Woody', slug: 'woody', image: '/public//uploads/categories/noir-intense.png', description: 'Bold & Confident' },
-  { name: 'Fresh', slug: 'fresh', image: '/public//uploads/categories/oudh-blanc.png', description: 'Clean & Invigorating' },
-  { name: 'Citrus', slug: 'citrus', image: '/public//uploads/categories/oudh-royale.png', description: 'Bright & Zesty' },
+  { name: 'Floral', slug: 'floral', image: '/uploads/categories/lamour-eclat.png', description: 'Elegant & Timeless' },
+  { name: 'Oriental', slug: 'oriental', image: '/uploads/categories/harmonia.png', description: 'Warm & Sensual' },
+  { name: 'Woody', slug: 'woody', image: '/uploads/categories/noir-intense.png', description: 'Bold & Confident' },
+  { name: 'Fresh', slug: 'fresh', image: '/uploads/categories/oudh-blanc.png', description: 'Clean & Invigorating' },
+  { name: 'Citrus', slug: 'citrus', image: '/uploads/categories/oudh-royale.png', description: 'Bright & Zesty' },
 ];
 
 export default function CategoryShowcase() {

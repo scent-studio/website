@@ -4,7 +4,6 @@
   "buildCommand": "cd frontend && npm run build",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.ts" },
-    { "source": "/uploads/(.*)", "destination": "/frontend/public/uploads/$1" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|uploads/).*)", "destination": "/index.html" }
   ]
 }

@@ -91,7 +91,7 @@ export default function Navbar({ onSearchOpen, onCartOpen, onMobileMenuOpen }: N
 
           <Link to="/" className="flex-shrink-0">
             {/* <img
-              src="public/uploads/logo/logo.jpeg"
+              src="/uploads/logo/logo.jpeg"
               alt="Scent Studio"
               className="h-10 md:h-12 w-auto"
             /> */}

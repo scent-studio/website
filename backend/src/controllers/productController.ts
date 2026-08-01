@@ -25,6 +25,7 @@ const getProducts = asyncHandler(async (req: any, res: any) => {
     isTrending,
     isBestSeller,
     isNewArrival,
+    isGiftSet,
     tags,
   } = req.query;
 
@@ -60,6 +61,7 @@ const getProducts = asyncHandler(async (req: any, res: any) => {
   if (isTrending === 'true') queryFields.isTrending = true;
   if (isBestSeller === 'true') queryFields.isBestSeller = true;
   if (isNewArrival === 'true') queryFields.isNewArrival = true;
+  if (isGiftSet === 'true') queryFields.isGiftSet = true;
 
   if (minPrice || maxPrice) {
     queryFields.discountedPrice = {};

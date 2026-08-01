@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import SectionTitle from '../ui/SectionTitle';
 import ProductCard from './ProductCard';
@@ -10,6 +11,7 @@ interface ProductGridProps {
   products?: Product[];
   className?: string;
   columns?: 2 | 3 | 4;
+  viewAllLink?: string;
 }
 
 const defaultProducts = [
@@ -35,6 +37,7 @@ export default function ProductGrid({
   products = defaultProducts,
   className,
   columns = 4,
+  viewAllLink,
 }: ProductGridProps) {
   return (
     <section className={cn('py-20 bg-luxury-cream', className)}>
@@ -45,6 +48,16 @@ export default function ProductGrid({
             <ProductCard key={product._id} product={product} index={idx} />
           ))}
         </div>
+        {viewAllLink && (
+          <div className="mt-10 text-center">
+            <Link
+              to={viewAllLink}
+              className="inline-block border border-luxury-charcoal px-8 py-3 text-sm tracking-[0.2em] uppercase text-luxury-charcoal hover:bg-luxury-charcoal hover:text-luxury-gold transition-colors"
+            >
+              View All
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
