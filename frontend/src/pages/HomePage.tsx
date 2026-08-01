@@ -126,9 +126,9 @@ export default function HomePage() {
       )}
 
       <HowToPickSection />
-      <FeaturedCollections />
-      <CategoryShowcase />
-      <CategoriesGrid />
+      {/* <FeaturedCollections /> */}
+      {/* <CategoryShowcase /> */}
+      {/* <CategoriesGrid /> */}
       <WhyChooseUs />
       <FAQSection />
       <NewsletterSection />
