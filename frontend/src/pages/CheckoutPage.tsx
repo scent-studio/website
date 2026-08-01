@@ -227,21 +227,18 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* 1. Contact */}
-              <div className="bg-luxury-white border border-luxury-border p-6 rounded-lg space-y-5">
-                {sectionTitle('1', 'Contact Information')}
-                <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
+              {/* 1. Contact & Delivery */}
+              <div className="bg-luxury-white border border-luxury-border p-6 rounded-lg space-y-4">
+                {sectionTitle('1', 'Contact & Delivery')}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input label="First Name" placeholder="Ayesha" error={errors.firstName?.message} {...register('firstName')} />
                   <Input label="Last Name" placeholder="Khan" error={errors.lastName?.message} {...register('lastName')} />
                 </div>
-                <Input label="Phone" type="tel" placeholder="+92 300 1234567" error={errors.phone?.message} {...register('phone')} />
-              </div>
-
-              {/* 2. Shipping Address */}
-              <div className="bg-luxury-white border border-luxury-border p-6 rounded-lg space-y-5">
-                {sectionTitle('2', 'Shipping Address')}
-                <div className="mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
+                  <Input label="Phone" type="tel" placeholder="+92 300 1234567" error={errors.phone?.message} {...register('phone')} />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-luxury-charcoal mb-1.5">Country/Region</label>
                   <select
                     {...register('shippingCountry')}
@@ -250,20 +247,33 @@ export default function CheckoutPage() {
                     <option value="Pakistan">Pakistan</option>
                   </select>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="Street Address" placeholder="House 12, Street 5" error={errors.shippingStreet?.message} {...register('shippingStreet')} />
-                  <Input label="Apartment (optional)" placeholder="Apt, suite, etc." {...register('shippingApartment')} />
-                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Input label="Street Address" placeholder="House 12, Street 5" error={errors.shippingStreet?.message} {...register('shippingStreet')} />
                   <Input label="City" placeholder="Lahore" error={errors.shippingCity?.message} {...register('shippingCity')} />
                   <Input label="Postal Code (optional)" placeholder="54000" {...register('shippingZip')} />
-                  <Input label="Phone" type="tel" placeholder="+92 300 1234567" error={errors.phone?.message} {...register('phone')} />
+                </div>
+                <Input label="Apartment, suite, etc. (optional)" placeholder="Apt, floor, landmark..." {...register('shippingApartment')} />
+
+                {/* Billing */}
+                <div className="pt-3 border-t border-luxury-border space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" {...register('billingSame')} className="w-4 h-4 rounded border-luxury-border accent-luxury-gold" />
+                    <span className="text-sm text-luxury-charcoal">Billing address is the same as delivery</span>
+                  </label>
+                  {!billingSame && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Input label="Billing Street" {...register('billingStreet')} />
+                      <Input label="Billing City" {...register('billingCity')} />
+                      <Input label="Billing Postal Code" {...register('billingZip')} />
+                      <Input label="Billing Country" {...register('billingCountry')} />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* 3. Payment Method */}
-              <div className="bg-luxury-white border border-luxury-border p-6 rounded-lg space-y-5">
-                {sectionTitle('3', 'Payment Method')}
+              {/* 2. Payment Method */}
+              <div className="bg-luxury-white border border-luxury-border p-6 rounded-lg space-y-4">
+                {sectionTitle('2', 'Payment Method')}
                 <div className="space-y-3">
                   <label className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all ${
                     paymentMethod === 'cash_on_delivery' ? 'border-luxury-charcoal bg-luxury-ivory/50' : 'border-luxury-border hover:border-luxury-charcoal/40'
@@ -284,51 +294,12 @@ export default function CheckoutPage() {
                     </div>
                   </label>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-luxury-charcoal mb-1.5">Order Notes (optional)</label>
-                  <textarea
-                    {...register('notes')}
-                    placeholder="Delivery instructions, special requests..."
-                    rows={3}
-                    className="w-full px-4 py-3 bg-luxury-white border border-luxury-border rounded-lg text-luxury-charcoal placeholder:text-luxury-steel/50 outline-none focus:border-luxury-gold focus:ring-1 focus:ring-luxury-gold/20 transition-all resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* 4. Billing Address */}
-              <div className="bg-luxury-white border border-luxury-border p-6 rounded-lg space-y-5">
-                {sectionTitle('4', 'Billing Address')}
-                <div className="space-y-3">
-                  <label className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all ${
-                    billingSame ? 'border-luxury-charcoal bg-luxury-ivory/50' : 'border-luxury-border hover:border-luxury-charcoal/40'
-                  }`}>
-                    <input type="radio" {...register('billingSame')} value="true" className="accent-luxury-gold" />
-                    <span className="text-sm text-luxury-charcoal">Same as shipping address</span>
-                  </label>
-                  <label className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all ${
-                    !billingSame ? 'border-luxury-charcoal bg-luxury-ivory/50' : 'border-luxury-border hover:border-luxury-charcoal/40'
-                  }`}>
-                    <input type="radio" {...register('billingSame')} value="false" className="accent-luxury-gold" />
-                    <span className="text-sm text-luxury-charcoal">Use a different billing address</span>
-                  </label>
-                </div>
-
-                {!billingSame && (
-                  <div className="space-y-4 mt-4">
-                    <Input label="Street Address" {...register('billingStreet')} />
-                    <Input label="Apartment (optional)" {...register('billingApartment')} />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Input label="City" {...register('billingCity')} />
-                      <Input label="Postal Code" {...register('billingZip')} />
-                    </div>
-                    <select
-                      {...register('billingCountry')}
-                      className="w-full px-4 py-3 bg-luxury-white border border-luxury-border rounded-lg text-luxury-charcoal outline-none focus:border-luxury-gold focus:ring-1 focus:ring-luxury-gold/20 transition-all"
-                    >
-                      <option value="Pakistan">Pakistan</option>
-                    </select>
-                  </div>
-                )}
+                <textarea
+                  {...register('notes')}
+                  placeholder="Order notes (optional)"
+                  rows={2}
+                  className="w-full px-4 py-3 bg-luxury-white border border-luxury-border rounded-lg text-luxury-charcoal placeholder:text-luxury-steel/50 outline-none focus:border-luxury-gold focus:ring-1 focus:ring-luxury-gold/20 transition-all resize-none"
+                />
               </div>
 
               {/* 5. Add Discount */}
@@ -374,7 +345,7 @@ export default function CheckoutPage() {
 
               {/* Mobile Order Summary */}
               <div className="lg:hidden bg-luxury-white border border-luxury-border p-6 rounded-lg space-y-4">
-                {sectionTitle('5', 'Order Summary')}
+                {sectionTitle('3', 'Order Summary')}
                 {items.map((item) => (
                   <div key={`${item.product._id}-${item.size}`} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-3">
