@@ -63,10 +63,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getPreferredTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light';
 }
 
 export function applyThemeToDocument(theme: Theme) {
@@ -105,20 +102,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyThemeToDocument(theme);
   }, [theme]);
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = (event: MediaQueryListEvent) => {
-      if (localStorage.getItem(STORAGE_KEY)) return;
-      withThemeTransition(() => {
-        const next: Theme = event.matches ? 'dark' : 'light';
-        applyThemeToDocument(next);
-        setThemeState(next);
-      });
-    };
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, []);
 
   const setTheme = useCallback((next: Theme) => {
     withThemeTransition(() => {

@@ -5,7 +5,6 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { X, Heart, Package, Settings, LogOut } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import ThemeToggle from '../ui/ThemeToggle';
 
 const mainLinks = [
   { label: 'Home', path: '/' },
@@ -47,7 +46,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             <div className="flex items-center justify-between p-5 border-b border-luxury-border">
               <span className="text-xl font-serif text-luxury-charcoal tracking-[0.12em]">Scent Studio</span>
               <div className="flex items-center gap-1">
-                <ThemeToggle />
                 <button onClick={onClose} className="text-luxury-steel hover:text-luxury-charcoal transition-colors p-1">
                   <X size={20} />
                 </button>

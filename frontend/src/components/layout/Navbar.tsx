@@ -7,7 +7,6 @@ import {
   Search, Heart, ShoppingBag, User, ChevronDown, Menu, LogOut, Package, Settings,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import ThemeToggle from '../ui/ThemeToggle';
 
 const navLinks = [
   { label: 'Home', path: '/' },
@@ -152,8 +151,6 @@ export default function Navbar({ onSearchOpen, onCartOpen, onMobileMenuOpen }: N
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <ThemeToggle />
-
             <button
               onClick={onSearchOpen}
               className={cn(
