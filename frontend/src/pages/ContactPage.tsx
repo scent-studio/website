@@ -23,10 +23,11 @@ const contactSchema = z.object({
 type ContactForm = z.infer<typeof contactSchema>;
 
 const contactInfo = [
-  { icon: MapPin, label: 'Address', value: '123 Luxury Avenue, New York, NY 10001' },
-  { icon: Phone, label: 'Phone', value: '+1 (555) 123-4567' },
-  { icon: Mail, label: 'Email', value: 'hello@luxefragrances.com' },
-  { icon: Clock, label: 'Hours', value: 'Mon - Fri: 9am - 8pm EST' },
+  { icon: MapPin, label: 'For Business Queries', value: 'Garden East ADVI Co-Working' },
+  { icon: MapPin, label: 'In Store Perfume Counter', value: 'The Wella Men Salon DHA Phase 5 Badar Commercial' },
+  { icon: Phone, label: 'Phone', value: '+923208348754' },
+  { icon: Mail, label: 'Email', value: 'scentstudio2@gmail.com' },
+  { icon: Clock, label: 'Hours', value: '24/7 Service' },
 ];
 
 export default function ContactPage() {
@@ -109,7 +110,7 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-luxury-border bg-luxury-ivory shadow-card">
+                {/* <div className="overflow-hidden rounded-2xl border border-luxury-border bg-luxury-ivory shadow-card">
                   <div className="aspect-[16/9] flex items-center justify-center">
                     <div className="text-center px-4">
                       <MapPin size={32} className="text-luxury-gold/50 mx-auto mb-2" />
@@ -117,7 +118,7 @@ export default function ContactPage() {
                       <p className="text-xs text-luxury-steel mt-1">123 Luxury Avenue, New York</p>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </ScrollReveal>
           </div>
