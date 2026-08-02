@@ -158,10 +158,17 @@ productSchema.pre('save', function (this: any, next: Function) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }
 
-  if (this.discount && this.discount > 0) {
-    this.discountedPrice = this.price - (this.price * this.discount) / 100;
+  const price = Number(this.price) || 0;
+  const discountedPrice = Number(this.discountedPrice);
+
+  if (discountedPrice > 0 && price > discountedPrice) {
+    this.discountedPrice = discountedPrice;
+    this.discount = Math.round(((price - discountedPrice) / price) * 100);
+  } else if (this.discount && this.discount > 0) {
+    this.discountedPrice = price - (price * this.discount) / 100;
   } else {
-    this.discountedPrice = this.price;
+    this.discount = 0;
+    this.discountedPrice = price;
   }
 
   next();

@@ -31,7 +31,7 @@ const productSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   shortDescription: z.string().optional(),
   price: z.string().min(1, 'Price is required'),
-  discount: z.string().optional(),
+  originalPrice: z.string().optional(),
   category: z.string().min(1, 'Category is required'),
   brand: z.string().optional(),
   gender: z.string().min(1, 'Gender is required'),
@@ -89,7 +89,7 @@ export default function AdminProductFormPage() {
   } = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      discount: '0',
+      originalPrice: '',
       stock: '0',
       size: '50ml',
       sizePrice: '',
@@ -122,8 +122,8 @@ export default function AdminProductFormPage() {
             name: p.name,
             description: p.description,
             shortDescription: p.shortDescription || '',
-            price: String(p.price ?? ''),
-            discount: String(p.discount ?? 0),
+            price: String((p.discountedPrice || p.price) ?? ''),
+            originalPrice: String(p.price ?? ''),
             category: idOf(p.category),
             gender: p.gender || '',
             stock: String(p.stock ?? p.stockQuantity ?? 0),
@@ -160,7 +160,10 @@ export default function AdminProductFormPage() {
   const onSubmit = async (data: ProductForm) => {
     setSubmitting(true);
     try {
-      const price = parseFloat(data.price);
+      const sellingPrice = parseFloat(data.price);
+      const originalPrice = data.originalPrice ? parseFloat(data.originalPrice) : 0;
+      const mrp = originalPrice > sellingPrice ? originalPrice : sellingPrice;
+      const discount = mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
       const sizePrice = parseFloat(data.sizePrice);
       const sizeStock = data.sizeStock ? parseInt(data.sizeStock, 10) : 0;
       const stock = data.stock ? parseInt(data.stock, 10) : sizeStock;
@@ -169,8 +172,9 @@ export default function AdminProductFormPage() {
         name: data.name,
         description: data.description,
         shortDescription: data.shortDescription || undefined,
-        price,
-        discount: data.discount ? parseFloat(data.discount) : 0,
+        price: mrp,
+        discountedPrice: sellingPrice,
+        discount,
         category: data.category,
         gender: data.gender as Gender,
         stock,
@@ -253,19 +257,22 @@ export default function AdminProductFormPage() {
               label="Price (PKR)"
               type="number"
               step="0.01"
+              placeholder="e.g. 5199"
               error={errors.price?.message}
               {...register('price')}
             />
             <Input
-              label="Discount (%)"
+              label="Original Price / MRP (PKR)"
               type="number"
-              min="0"
-              max="100"
-              step="1"
-              error={errors.discount?.message}
-              {...register('discount')}
+              step="0.01"
+              placeholder="e.g. 5500 (optional)"
+              error={errors.originalPrice?.message}
+              {...register('originalPrice')}
             />
           </div>
+          <p className="text-xs text-luxury-steel">
+            Discount % is calculated automatically from the two prices. Leave Original Price empty if there is no discount.
+          </p>
           <Textarea label="Short Description" {...register('shortDescription')} />
           <Textarea
             label="Full Description"

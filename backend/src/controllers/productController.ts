@@ -166,18 +166,24 @@ const createProduct = asyncHandler(async (req: any, res: any) => {
 
 const updateProduct = asyncHandler(async (req: any, res: any) => {
   clearCache();
-  const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  })
-    .populate('category', 'name slug')
-    .populate('brand', 'name slug logo');
-
+  const product = await Product.findById(req.params.id);
   if (!product) {
     throw ApiError.notFound('Product not found');
   }
 
-  res.status(200).json(ApiResponse.updated(product));
+  const { price, discountedPrice, discount, ...rest } = req.body;
+  if (price !== undefined) product.price = price;
+  if (discountedPrice !== undefined) product.discountedPrice = discountedPrice;
+  if (discount !== undefined) product.discount = discount;
+  Object.assign(product, rest);
+
+  await product.save();
+
+  const populated = await Product.findById(product._id)
+    .populate('category', 'name slug')
+    .populate('brand', 'name slug logo');
+
+  res.status(200).json(ApiResponse.updated(populated));
 });
 
 const deleteProduct = asyncHandler(async (req: any, res: any) => {

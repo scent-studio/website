@@ -75,7 +75,7 @@ export default function UserWishlistPage() {
                 <Link to={`/product/${product.slug}`}>
                   <h3 className="text-sm font-medium text-luxury-charcoal hover:text-luxury-gold truncate">{product.name}</h3>
                 </Link>
-                <p className="text-sm font-serif text-luxury-gold mt-1">{formatPrice(product.price)}</p>
+                <p className="text-sm font-serif text-luxury-gold mt-1">{formatPrice(product.discountedPrice || product.price)}</p>
                 <Button variant="primary" size="sm" className="w-full mt-3" onClick={() => handleAddToCart(product._id)}>
                   <ShoppingBag size={14} /> Add to Cart
                 </Button>

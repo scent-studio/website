@@ -58,7 +58,7 @@ export default function AdminProductsPage() {
         </div>
       </div>
     ) },
-    { key: 'price', label: 'Price', render: (p: Product) => <span className="font-serif text-luxury-gold">{formatPrice(p.price)}</span> },
+    { key: 'price', label: 'Price', render: (p: Product) => <span className="font-serif text-luxury-gold">{formatPrice(p.discountedPrice || p.price)}</span> },
     { key: 'stock', label: 'Stock', render: (p: Product) => {
       const stock = p.stock ?? p.stockQuantity ?? 0;
       const inStock = p.inStock ?? stock > 0;
