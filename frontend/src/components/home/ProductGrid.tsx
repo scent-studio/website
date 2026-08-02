@@ -45,15 +45,15 @@ export default function ProductGrid({
         {title && <SectionTitle title={title} subtitle={subtitle} />}
         <div
           className={cn(
-            'flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth',
-            'sm:pb-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:snap-none',
+            'flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory min-w-0',
+            'sm:pb-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:snap-none',
             columnsMap[columns]
           )}
         >
           {products.map((product, idx) => (
             <div
               key={product._id}
-              className="min-w-[85%] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink"
+              className="min-w-[68%] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink"
             >
               <ProductCard product={product} index={idx} />
             </div>
