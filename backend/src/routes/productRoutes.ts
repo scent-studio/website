@@ -14,6 +14,7 @@ const {
   getRelated,
   getHomeData,
   searchProducts,
+  getProductImage,
 } = require('../controllers/productController');
 const { protect, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
@@ -27,6 +28,7 @@ router.get('/best-sellers', cacheMiddleware(30 * 1000), getBestSellers);
 router.get('/new-arrivals', cacheMiddleware(30 * 1000), getNewArrivals);
 router.get('/home', cacheMiddleware(5 * 60 * 1000), getHomeData);
 router.get('/search', cacheMiddleware(30 * 1000), searchProducts);
+router.get('/image/:id/:index', getProductImage);
 router.get('/slug/:slug', cacheMiddleware(30 * 1000), getProductBySlug);
 router.get('/:id/related', cacheMiddleware(30 * 1000), getRelated);
 router.get('/:id', cacheMiddleware(30 * 1000), getProduct);

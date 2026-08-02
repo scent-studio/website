@@ -32,6 +32,39 @@ const listProjection = {
   createdAt: 1,
 };
 
+const imageUrlFor = (id: any) => `/api/products/image/${id}/0`;
+
+const mapToImageUrls = (products: any[]) =>
+  products.map((p) => {
+    const doc = p.toObject ? p.toObject() : { ...p };
+    if (Array.isArray(doc.images) && doc.images.length > 0) {
+      doc.images = doc.images.map((_: any, i: number) => `/api/products/image/${doc._id}/${i}`);
+    }
+    return doc;
+  });
+
+const getProductImage = asyncHandler(async (req: any, res: any) => {
+  const product = await Product.findById(req.params.id, { images: 1 });
+  const index = parseInt(req.params.index || '0', 10);
+
+  if (!product || !Array.isArray(product.images) || !product.images[index]) {
+    throw ApiError.notFound('Image not found');
+  }
+
+  const raw = product.images[index] as string;
+  const match = raw.match(/^data:([\w\/\+\.\-]+);base64,(.*)$/);
+  if (!match) {
+    throw ApiError.badRequest('Invalid image data');
+  }
+
+  const mime = match[1];
+  const buffer = Buffer.from(match[2], 'base64');
+
+  res.setHeader('Content-Type', mime);
+  res.setHeader('Cache-Control', 'public, s-maxage=3600, max-age=3600');
+  res.send(buffer);
+});
+
 const getProducts = asyncHandler(async (req: any, res: any) => {
   const {
     page = 1,
@@ -121,7 +154,7 @@ const getProducts = asyncHandler(async (req: any, res: any) => {
   const total = await Product.countDocuments(queryFields);
 
   res.status(200).json(
-    ApiResponse.success(products, undefined, total, {
+    ApiResponse.success(mapToImageUrls(products), undefined, total, {
       page: pageNum,
       limit: limitNum,
       totalPages: Math.ceil(total / limitNum),
@@ -205,7 +238,7 @@ const getFeatured = asyncHandler(async (req: any, res: any) => {
     .limit(limit)
     .sort('-rating');
 
-  res.status(200).json(ApiResponse.success(products));
+  res.status(200).json(ApiResponse.success(mapToImageUrls(products)));
 });
 
 const getTrending = asyncHandler(async (req: any, res: any) => {
@@ -217,7 +250,7 @@ const getTrending = asyncHandler(async (req: any, res: any) => {
     .limit(limit)
     .sort('-totalSales');
 
-  res.status(200).json(ApiResponse.success(products));
+  res.status(200).json(ApiResponse.success(mapToImageUrls(products)));
 });
 
 const getBestSellers = asyncHandler(async (req: any, res: any) => {
@@ -229,7 +262,7 @@ const getBestSellers = asyncHandler(async (req: any, res: any) => {
     .limit(limit)
     .sort('-totalSales');
 
-  res.status(200).json(ApiResponse.success(products));
+  res.status(200).json(ApiResponse.success(mapToImageUrls(products)));
 });
 
 const getNewArrivals = asyncHandler(async (req: any, res: any) => {
@@ -241,7 +274,7 @@ const getNewArrivals = asyncHandler(async (req: any, res: any) => {
     .limit(limit)
     .sort('-createdAt');
 
-  res.status(200).json(ApiResponse.success(products));
+  res.status(200).json(ApiResponse.success(mapToImageUrls(products)));
 });
 
 const getHomeData = asyncHandler(async (req: any, res: any) => {
@@ -268,13 +301,13 @@ const getHomeData = asyncHandler(async (req: any, res: any) => {
 
   res.status(200).json(
     ApiResponse.success({
-      bundles,
-      newArrivals: allNew.slice(0, 4),
-      newArrivals100,
-      bestSellers,
-      women,
-      men,
-      unisex,
+      bundles: mapToImageUrls(bundles),
+      newArrivals: mapToImageUrls(allNew.slice(0, 4)),
+      newArrivals100: mapToImageUrls(newArrivals100),
+      bestSellers: mapToImageUrls(bestSellers),
+      women: mapToImageUrls(women),
+      men: mapToImageUrls(men),
+      unisex: mapToImageUrls(unisex),
     })
   );
 });
@@ -299,7 +332,7 @@ const getRelated = asyncHandler(async (req: any, res: any) => {
     .limit(4)
     .sort('-rating');
 
-  res.status(200).json(ApiResponse.success(related));
+  res.status(200).json(ApiResponse.success(mapToImageUrls(related)));
 });
 
 const searchProducts = asyncHandler(async (req: any, res: any) => {
@@ -329,7 +362,7 @@ const searchProducts = asyncHandler(async (req: any, res: any) => {
   });
 
   res.status(200).json(
-    ApiResponse.success(products, undefined, total, {
+    ApiResponse.success(mapToImageUrls(products), undefined, total, {
       page: pageNum,
       limit: limitNum,
       totalPages: Math.ceil(total / limitNum),
@@ -352,6 +385,7 @@ module.exports = {
   getRelated,
   getHomeData,
   searchProducts,
+  getProductImage,
 };
 
 export {};
