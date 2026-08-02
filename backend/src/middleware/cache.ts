@@ -27,6 +27,7 @@ const clearCachePrefix = (prefix: string) => {
 const cacheMiddleware = (ttlMs = DEFAULT_TTL_MS) => {
   return (req: any, res: any, next: any) => {
     if (req.method !== 'GET') return next();
+    res.setHeader('Cache-Control', `public, s-maxage=${Math.floor(ttlMs / 1000)}, max-age=${Math.floor(ttlMs / 1000)}`);
     const key = req.originalUrl;
     const cached = getCache(key);
     if (cached) {

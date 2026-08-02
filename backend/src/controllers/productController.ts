@@ -10,7 +10,7 @@ const { clearCache } = require('../middleware/cache');
 const listProjection = {
   name: 1,
   slug: 1,
-  images: 1,
+  images: { $slice: 1 },
   price: 1,
   discount: 1,
   discountedPrice: 1,

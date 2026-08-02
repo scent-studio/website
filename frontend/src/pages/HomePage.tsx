@@ -19,35 +19,41 @@ export default function HomePage() {
   const [women, setWomen] = useState<Product[]>([]);
   const [men, setMen] = useState<Product[]>([]);
   const [unisex, setUnisex] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState<Record<string, boolean>>({});
+
+  const markReady = (key: string) => {
+    setReady((prev) => ({ ...prev, [key]: true }));
+  };
 
   useEffect(() => {
     let mounted = true;
 
     const load = async () => {
-      try {
-        const [bundlesRes, newArrRes, bestRes, womenRes, menRes, unisexRes] = await Promise.all([
-          productService.getProducts({ isGiftSet: true, limit: 4 }),
-          productService.getProducts({ isNewArrival: true, limit: 8 }),
-          productService.getProducts({ isBestSeller: true, limit: 4 }),
-          productService.getProducts({ gender: 'female', limit: 4 }),
-          productService.getProducts({ gender: 'male', limit: 4 }),
-          productService.getProducts({ gender: 'unisex', limit: 4 }),
-        ]);
+      const request = async (
+        params: Parameters<typeof productService.getProducts>[0],
+        key: string,
+        onData: (data: Product[]) => void
+      ) => {
+        try {
+          const res = await productService.getProducts(params);
+          if (!mounted) return;
+          onData(res.data || []);
+        } catch {
+          if (!mounted) return;
+          onData([]);
+        }
+        if (mounted) markReady(key);
+      };
 
-        if (!mounted) return;
-
-        const allNew = newArrRes.data || [];
-        setBundles(bundlesRes.data || []);
-        setNewArrivals100(allNew.filter((p) => p.sizes?.some((s) => s.size.includes('100'))).slice(0, 4));
-        setNewArrivals(allNew.slice(0, 4));
-        setBestSellers(bestRes.data || []);
-        setWomen(womenRes.data || []);
-        setMen(menRes.data || []);
-        setUnisex(unisexRes.data || []);
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      request({ isGiftSet: true, limit: 4 }, 'bundles', setBundles);
+      request({ isNewArrival: true, limit: 8 }, 'newArrivals', (data) => {
+        setNewArrivals(data.slice(0, 4));
+        setNewArrivals100(data.filter((p) => p.sizes?.some((s) => s.size.includes('100'))).slice(0, 4));
+      });
+      request({ isBestSeller: true, limit: 4 }, 'bestSellers', setBestSellers);
+      request({ gender: 'female', limit: 4 }, 'women', setWomen);
+      request({ gender: 'male', limit: 4 }, 'men', setMen);
+      request({ gender: 'unisex', limit: 4 }, 'unisex', setUnisex);
     };
 
     load();
@@ -56,13 +62,16 @@ export default function HomePage() {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div>
-        <HeroSlider />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="animate-pulse">
+  const SectionSkeleton = () => (
+    <section className="py-10 bg-luxury-cream">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <div className="h-6 bg-luxury-border/50 rounded w-1/2 md:w-1/4 mb-2" />
+          <div className="h-3 bg-luxury-border/40 rounded w-2/3 md:w-1/3" />
+        </div>
+        <div className="flex gap-6 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scroll-smooth sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:snap-none">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="min-w-[70%] snap-start flex-shrink-0 sm:min-w-0 sm:flex-shrink animate-pulse">
               <div className="aspect-[3/4] rounded-xl bg-luxury-border/50" />
               <div className="mt-4 h-4 bg-luxury-border/50 rounded w-2/3" />
               <div className="mt-2 h-3 bg-luxury-border/40 rounded w-1/3" />
@@ -70,32 +79,40 @@ export default function HomePage() {
           ))}
         </div>
       </div>
-    );
-  }
+    </section>
+  );
 
   return (
     <div>
       <HeroSlider />
 
-      {bundles.length > 0 && (
-        <ProductGrid
-          title="Perfume Bundles"
-          subtitle="Curated gift sets for every occasion"
-          products={bundles}
-          viewAllLink="/shop?filters[tags]=bundle"
-        />
+      {ready.bundles ? (
+        bundles.length > 0 && (
+          <ProductGrid
+            title="Perfume Bundles"
+            subtitle="Curated gift sets for every occasion"
+            products={bundles}
+            viewAllLink="/shop?filters[tags]=bundle"
+          />
+        )
+      ) : (
+        <SectionSkeleton />
       )}
 
-      {newArrivals100.length > 0 && (
-        <ProductGrid
-          title="New Arrivals of 100ML"
-          subtitle="Full-size bottles, freshly landed"
-          products={newArrivals100}
-          viewAllLink="/shop?sort=newest"
-        />
+      {ready.newArrivals ? (
+        newArrivals100.length > 0 && (
+          <ProductGrid
+            title="New Arrivals of 100ML"
+            subtitle="Full-size bottles, freshly landed"
+            products={newArrivals100}
+            viewAllLink="/shop?sort=newest"
+          />
+        )
+      ) : (
+        <SectionSkeleton />
       )}
 
-      {newArrivals.length > 0 && (
+      {ready.newArrivals && newArrivals.length > 0 && (
         <ProductGrid
           title="New Arrival"
           subtitle="Discover the latest additions to our collection"
@@ -104,40 +121,56 @@ export default function HomePage() {
         />
       )}
 
-      {bestSellers.length > 0 && (
-        <ProductGrid
-          title="Best Seller Perfumes"
-          subtitle="Beloved by connoisseurs worldwide"
-          products={bestSellers}
-          viewAllLink="/shop?sort=popular"
-        />
+      {ready.bestSellers ? (
+        bestSellers.length > 0 && (
+          <ProductGrid
+            title="Best Seller Perfumes"
+            subtitle="Beloved by connoisseurs worldwide"
+            products={bestSellers}
+            viewAllLink="/shop?sort=popular"
+          />
+        )
+      ) : (
+        <SectionSkeleton />
       )}
 
-      {women.length > 0 && (
-        <ProductGrid
-          title="Best Perfumes for Women in Pakistan"
-          subtitle="Elegant, warm & layered florals"
-          products={women}
-          viewAllLink="/shop?gender=female"
-        />
+      {ready.women ? (
+        women.length > 0 && (
+          <ProductGrid
+            title="Best Perfumes for Women in Pakistan"
+            subtitle="Elegant, warm & layered florals"
+            products={women}
+            viewAllLink="/shop?gender=female"
+          />
+        )
+      ) : (
+        <SectionSkeleton />
       )}
 
-      {men.length > 0 && (
-        <ProductGrid
-          title="Perfume Brands for Men in Pakistan"
-          subtitle="Bold, confident & long-lasting"
-          products={men}
-          viewAllLink="/shop?gender=male"
-        />
+      {ready.men ? (
+        men.length > 0 && (
+          <ProductGrid
+            title="Perfume Brands for Men in Pakistan"
+            subtitle="Bold, confident & long-lasting"
+            products={men}
+            viewAllLink="/shop?gender=male"
+          />
+        )
+      ) : (
+        <SectionSkeleton />
       )}
 
-      {unisex.length > 0 && (
-        <ProductGrid
-          title="Unisex Perfumes in Pakistan"
-          subtitle="Clean musks, light woods & balanced florals"
-          products={unisex}
-          viewAllLink="/shop?gender=unisex"
-        />
+      {ready.unisex ? (
+        unisex.length > 0 && (
+          <ProductGrid
+            title="Unisex Perfumes in Pakistan"
+            subtitle="Clean musks, light woods & balanced florals"
+            products={unisex}
+            viewAllLink="/shop?gender=unisex"
+          />
+        )
+      ) : (
+        <SectionSkeleton />
       )}
 
       <HowToPickSection />

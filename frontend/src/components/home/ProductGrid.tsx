@@ -26,9 +26,9 @@ const defaultProducts = [
 ] as unknown as Product[];
 
 const columnsMap = {
-  2: 'grid-cols-1 sm:grid-cols-2',
-  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-2 lg:grid-cols-3',
+  4: 'sm:grid-cols-2 lg:grid-cols-4',
 };
 
 export default function ProductGrid({
@@ -43,9 +43,20 @@ export default function ProductGrid({
     <section className={cn('py-10 bg-luxury-cream', className)}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {title && <SectionTitle title={title} subtitle={subtitle} />}
-        <div className={cn('grid gap-6', columnsMap[columns])}>
+        <div
+          className={cn(
+            'flex gap-6 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scroll-smooth',
+            'sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:snap-none',
+            columnsMap[columns]
+          )}
+        >
           {products.map((product, idx) => (
-            <ProductCard key={product._id} product={product} index={idx} />
+            <div
+              key={product._id}
+              className="min-w-[70%] snap-start flex-shrink-0 sm:min-w-0 sm:flex-shrink"
+            >
+              <ProductCard product={product} index={idx} />
+            </div>
           ))}
         </div>
         {viewAllLink && (
