@@ -2,6 +2,7 @@ const Category = require('../models/Category');
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
+const { clearCache } = require('../middleware/cache');
 
 const getCategories = asyncHandler(async (req: any, res: any) => {
   const { isActive } = req.query;
@@ -39,6 +40,7 @@ const createCategory = asyncHandler(async (req: any, res: any) => {
     throw ApiError.conflict('Category with this name already exists');
   }
 
+  clearCache();
   const category = await Category.create(req.body);
 
   res.status(201).json(ApiResponse.created(category));
@@ -61,6 +63,7 @@ const updateCategory = asyncHandler(async (req: any, res: any) => {
     throw ApiError.notFound('Category not found');
   }
 
+  clearCache();
   res.status(200).json(ApiResponse.updated(category));
 });
 
@@ -77,6 +80,7 @@ const deleteCategory = asyncHandler(async (req: any, res: any) => {
     throw ApiError.notFound('Category not found');
   }
 
+  clearCache();
   res.status(200).json(ApiResponse.deleted('Category deleted successfully'));
 });
 

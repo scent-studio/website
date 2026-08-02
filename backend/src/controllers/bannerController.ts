@@ -2,6 +2,7 @@ const Banner = require('../models/Banner');
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
+const { clearCache } = require('../middleware/cache');
 
 const getBanners = asyncHandler(async (req: any, res: any) => {
   const { type, isActive } = req.query;
@@ -37,6 +38,7 @@ const getBanner = asyncHandler(async (req: any, res: any) => {
 });
 
 const createBanner = asyncHandler(async (req: any, res: any) => {
+  clearCache();
   const banner = await Banner.create(req.body);
 
   res.status(201).json(ApiResponse.created(banner));
@@ -52,6 +54,7 @@ const updateBanner = asyncHandler(async (req: any, res: any) => {
     throw ApiError.notFound('Banner not found');
   }
 
+  clearCache();
   res.status(200).json(ApiResponse.updated(banner));
 });
 
@@ -61,6 +64,7 @@ const deleteBanner = asyncHandler(async (req: any, res: any) => {
     throw ApiError.notFound('Banner not found');
   }
 
+  clearCache();
   res.status(200).json(ApiResponse.deleted('Banner deleted successfully'));
 });
 

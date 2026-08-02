@@ -10,11 +10,12 @@ const {
 } = require('../controllers/categoryController');
 const { protect, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const { cacheMiddleware } = require('../middleware/cache');
 const { createCategoryRules, updateCategoryRules } = require('../validators/category');
 
-router.get('/', getCategories);
-router.get('/slug/:slug', getCategoryBySlug);
-router.get('/:id', getCategory);
+router.get('/', cacheMiddleware(5 * 60 * 1000), getCategories);
+router.get('/slug/:slug', cacheMiddleware(5 * 60 * 1000), getCategoryBySlug);
+router.get('/:id', cacheMiddleware(5 * 60 * 1000), getCategory);
 
 router.use(protect, authorize('admin'));
 router.post('/', createCategoryRules, validate, createCategory);

@@ -16,17 +16,18 @@ const {
 } = require('../controllers/productController');
 const { protect, authorize } = require('../middleware/auth');
 const validate = require('../middleware/validate');
+const { cacheMiddleware, clearCache } = require('../middleware/cache');
 const { createProductRules, updateProductRules } = require('../validators/product');
 
-router.get('/', getProducts);
-router.get('/featured', getFeatured);
-router.get('/trending', getTrending);
-router.get('/best-sellers', getBestSellers);
-router.get('/new-arrivals', getNewArrivals);
-router.get('/search', searchProducts);
-router.get('/slug/:slug', getProductBySlug);
-router.get('/:id/related', getRelated);
-router.get('/:id', getProduct);
+router.get('/', cacheMiddleware(30 * 1000), getProducts);
+router.get('/featured', cacheMiddleware(30 * 1000), getFeatured);
+router.get('/trending', cacheMiddleware(30 * 1000), getTrending);
+router.get('/best-sellers', cacheMiddleware(30 * 1000), getBestSellers);
+router.get('/new-arrivals', cacheMiddleware(30 * 1000), getNewArrivals);
+router.get('/search', cacheMiddleware(30 * 1000), searchProducts);
+router.get('/slug/:slug', cacheMiddleware(30 * 1000), getProductBySlug);
+router.get('/:id/related', cacheMiddleware(30 * 1000), getRelated);
+router.get('/:id', cacheMiddleware(30 * 1000), getProduct);
 
 router.use(protect, authorize('admin'));
 router.post('/', createProductRules, validate, createProduct);

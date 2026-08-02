@@ -5,6 +5,32 @@ const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const mongoose = require('mongoose');
+const { clearCache } = require('../middleware/cache');
+
+const listProjection = {
+  name: 1,
+  slug: 1,
+  images: 1,
+  price: 1,
+  discount: 1,
+  discountedPrice: 1,
+  sizes: 1,
+  rating: 1,
+  numReviews: 1,
+  gender: 1,
+  tags: 1,
+  isFeatured: 1,
+  isTrending: 1,
+  isBestSeller: 1,
+  isNewArrival: 1,
+  isGiftSet: 1,
+  isLimitedEdition: 1,
+  isVisible: 1,
+  brand: 1,
+  category: 1,
+  stock: 1,
+  createdAt: 1,
+};
 
 const getProducts = asyncHandler(async (req: any, res: any) => {
   const {
@@ -85,7 +111,7 @@ const getProducts = asyncHandler(async (req: any, res: any) => {
   const limitNum = parseInt(limit as string);
   const skip = (pageNum - 1) * limitNum;
 
-  const products = await Product.find(queryFields)
+  const products = await Product.find(queryFields, listProjection)
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo')
     .skip(skip)
@@ -129,6 +155,7 @@ const getProductBySlug = asyncHandler(async (req: any, res: any) => {
 });
 
 const createProduct = asyncHandler(async (req: any, res: any) => {
+  clearCache();
   const product = await Product.create(req.body);
   const populated = await Product.findById(product._id)
     .populate('category', 'name slug')
@@ -138,6 +165,7 @@ const createProduct = asyncHandler(async (req: any, res: any) => {
 });
 
 const updateProduct = asyncHandler(async (req: any, res: any) => {
+  clearCache();
   const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
@@ -153,6 +181,7 @@ const updateProduct = asyncHandler(async (req: any, res: any) => {
 });
 
 const deleteProduct = asyncHandler(async (req: any, res: any) => {
+  clearCache();
   const product = await Product.findByIdAndDelete(req.params.id);
   if (!product) {
     throw ApiError.notFound('Product not found');
@@ -164,7 +193,7 @@ const deleteProduct = asyncHandler(async (req: any, res: any) => {
 const getFeatured = asyncHandler(async (req: any, res: any) => {
   const limit = parseInt(req.query.limit) || 8;
 
-  const products = await Product.find({ isFeatured: true, isVisible: true })
+  const products = await Product.find({ isFeatured: true, isVisible: true }, listProjection)
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo')
     .limit(limit)
@@ -176,7 +205,7 @@ const getFeatured = asyncHandler(async (req: any, res: any) => {
 const getTrending = asyncHandler(async (req: any, res: any) => {
   const limit = parseInt(req.query.limit) || 8;
 
-  const products = await Product.find({ isTrending: true, isVisible: true })
+  const products = await Product.find({ isTrending: true, isVisible: true }, listProjection)
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo')
     .limit(limit)
@@ -188,7 +217,7 @@ const getTrending = asyncHandler(async (req: any, res: any) => {
 const getBestSellers = asyncHandler(async (req: any, res: any) => {
   const limit = parseInt(req.query.limit) || 8;
 
-  const products = await Product.find({ isBestSeller: true, isVisible: true })
+  const products = await Product.find({ isBestSeller: true, isVisible: true }, listProjection)
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo')
     .limit(limit)
@@ -200,7 +229,7 @@ const getBestSellers = asyncHandler(async (req: any, res: any) => {
 const getNewArrivals = asyncHandler(async (req: any, res: any) => {
   const limit = parseInt(req.query.limit) || 8;
 
-  const products = await Product.find({ isNewArrival: true, isVisible: true })
+  const products = await Product.find({ isNewArrival: true, isVisible: true }, listProjection)
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo')
     .limit(limit)
@@ -223,7 +252,7 @@ const getRelated = asyncHandler(async (req: any, res: any) => {
       { gender: product.gender },
     ],
     isVisible: true,
-  })
+  }, listProjection)
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo')
     .limit(4)
@@ -245,7 +274,7 @@ const searchProducts = asyncHandler(async (req: any, res: any) => {
 
   const products = await Product.find(
     { $text: { $search: q as string }, isVisible: true },
-    { score: { $meta: 'textScore' } }
+    { ...listProjection, score: { $meta: 'textScore' } }
   )
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo')

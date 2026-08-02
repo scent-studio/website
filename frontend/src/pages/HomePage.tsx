@@ -56,7 +56,22 @@ export default function HomePage() {
     };
   }, []);
 
-  if (loading) return <div className="min-h-screen" />;
+  if (loading) {
+    return (
+      <div>
+        <HeroSlider />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="aspect-[3/4] rounded-xl bg-luxury-border/50" />
+              <div className="mt-4 h-4 bg-luxury-border/50 rounded w-2/3" />
+              <div className="mt-2 h-3 bg-luxury-border/40 rounded w-1/3" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -1,4 +1,5 @@
 import api from './api';
+import { getCached, setCached } from '../lib/apiCache';
 import type { Product, PaginatedResponse, ApiResponse, FilterState, SortOption } from '../types';
 
 interface GetProductsParams {
@@ -21,18 +22,24 @@ interface GetProductsParams {
   isGiftSet?: boolean;
 }
 
+const CACHE_TTL = 120000;
+
 export const productService = {
   async getProducts(params: GetProductsParams = {}) {
-    const response = await api.get<PaginatedResponse<Product>>('/products', {
-      params: {
-        ...params,
-        isFeatured: params.isFeatured ? 'true' : undefined,
-        isTrending: params.isTrending ? 'true' : undefined,
-        isBestSeller: params.isBestSeller ? 'true' : undefined,
-        isNewArrival: params.isNewArrival ? 'true' : undefined,
-        isGiftSet: params.isGiftSet ? 'true' : undefined,
-      },
-    });
+    const query = {
+      ...params,
+      isFeatured: params.isFeatured ? 'true' : undefined,
+      isTrending: params.isTrending ? 'true' : undefined,
+      isBestSeller: params.isBestSeller ? 'true' : undefined,
+      isNewArrival: params.isNewArrival ? 'true' : undefined,
+      isGiftSet: params.isGiftSet ? 'true' : undefined,
+    };
+    const cacheKey = `products:${JSON.stringify(query)}`;
+    const cached = getCached<PaginatedResponse<Product>>(cacheKey);
+    if (cached) return cached;
+
+    const response = await api.get<PaginatedResponse<Product>>('/products', { params: query });
+    setCached(cacheKey, response.data, CACHE_TTL);
     return response.data;
   },
 
