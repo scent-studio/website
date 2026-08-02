@@ -43,6 +43,11 @@ export const productService = {
     return response.data;
   },
 
+  async getHomeData() {
+    const response = await api.get<ApiResponse<HomeData>>('/products/home');
+    return response.data;
+  },
+
   async getProduct(id: string) {
     const response = await api.get<ApiResponse<Product>>(`/products/${id}`);
     return response.data;
@@ -97,5 +102,15 @@ export const productService = {
     return response.data;
   },
 };
+
+export interface HomeData {
+  bundles: Product[];
+  newArrivals: Product[];
+  newArrivals100: Product[];
+  bestSellers: Product[];
+  women: Product[];
+  men: Product[];
+  unisex: Product[];
+}
 
 export type { GetProductsParams };

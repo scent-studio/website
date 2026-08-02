@@ -244,6 +244,41 @@ const getNewArrivals = asyncHandler(async (req: any, res: any) => {
   res.status(200).json(ApiResponse.success(products));
 });
 
+const getHomeData = asyncHandler(async (req: any, res: any) => {
+  const baseQuery = (extra: any, limit: number) =>
+    Product.find({ ...extra, isVisible: true }, listProjection)
+      .populate('category', 'name slug')
+      .populate('brand', 'name slug logo')
+      .limit(limit)
+      .sort('-createdAt');
+
+  const [bundles, newArrivals, bestSellers, women, men, unisex] = await Promise.all([
+    baseQuery({ isGiftSet: true }, 4),
+    baseQuery({ isNewArrival: true }, 8),
+    baseQuery({ isBestSeller: true }, 4),
+    baseQuery({ gender: 'female' }, 4),
+    baseQuery({ gender: 'male' }, 4),
+    baseQuery({ gender: 'unisex' }, 4),
+  ]);
+
+  const allNew = newArrivals;
+  const newArrivals100 = allNew
+    .filter((p: any) => p.sizes?.some((s: any) => s.size.includes('100')))
+    .slice(0, 4);
+
+  res.status(200).json(
+    ApiResponse.success({
+      bundles,
+      newArrivals: allNew.slice(0, 4),
+      newArrivals100,
+      bestSellers,
+      women,
+      men,
+      unisex,
+    })
+  );
+});
+
 const getRelated = asyncHandler(async (req: any, res: any) => {
   const product = await Product.findById(req.params.id);
   if (!product) {
@@ -315,6 +350,7 @@ module.exports = {
   getBestSellers,
   getNewArrivals,
   getRelated,
+  getHomeData,
   searchProducts,
 };
 

@@ -12,6 +12,7 @@ const {
   getBestSellers,
   getNewArrivals,
   getRelated,
+  getHomeData,
   searchProducts,
 } = require('../controllers/productController');
 const { protect, authorize } = require('../middleware/auth');
@@ -24,6 +25,7 @@ router.get('/featured', cacheMiddleware(30 * 1000), getFeatured);
 router.get('/trending', cacheMiddleware(30 * 1000), getTrending);
 router.get('/best-sellers', cacheMiddleware(30 * 1000), getBestSellers);
 router.get('/new-arrivals', cacheMiddleware(30 * 1000), getNewArrivals);
+router.get('/home', cacheMiddleware(60 * 1000), getHomeData);
 router.get('/search', cacheMiddleware(30 * 1000), searchProducts);
 router.get('/slug/:slug', cacheMiddleware(30 * 1000), getProductBySlug);
 router.get('/:id/related', cacheMiddleware(30 * 1000), getRelated);
