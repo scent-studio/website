@@ -62,7 +62,7 @@ export default function HomePage() {
             </div>
             <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:snap-none">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="min-w-[60%] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink animate-pulse">
+                <div key={i} className="min-w-[85%] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink animate-pulse">
                   <div className="aspect-[3/4] rounded-xl bg-luxury-border/50" />
                   <div className="mt-4 h-4 bg-luxury-border/50 rounded w-2/3" />
                   <div className="mt-2 h-3 bg-luxury-border/40 rounded w-1/3" />
