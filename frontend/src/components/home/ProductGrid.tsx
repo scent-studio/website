@@ -53,7 +53,7 @@ export default function ProductGrid({
           {products.map((product, idx) => (
             <div
               key={product._id}
-              className="min-w-[68%] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink"
+              className="min-w-[72%] snap-center flex-shrink-0 sm:min-w-0 sm:flex-shrink"
             >
               <ProductCard product={product} index={idx} />
             </div>

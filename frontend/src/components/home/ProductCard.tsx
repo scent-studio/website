@@ -105,7 +105,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     >
       <div className="relative overflow-hidden bg-luxury-warm">
         <Link to={`/product/${product.slug}`}>
-          <div className="aspect-[3/4] overflow-hidden">
+          <div className="aspect-square sm:aspect-[3/4] overflow-hidden">
             <img
               src={image}
               alt={product.name}
