@@ -44,7 +44,12 @@ export const productService = {
   },
 
   async getHomeData() {
+    const cacheKey = 'products:home';
+    const cached = getCached<ApiResponse<HomeData>>(cacheKey);
+    if (cached) return cached;
+
     const response = await api.get<ApiResponse<HomeData>>('/products/home');
+    setCached(cacheKey, response.data, 5 * 60 * 1000);
     return response.data;
   },
 
