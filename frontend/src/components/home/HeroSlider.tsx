@@ -6,17 +6,17 @@ import { cn } from '../../lib/utils';
 
 const slides = [
   {
-    image: '/uploads/hero-banners/slide-1.png',
+    image: '/uploads/hero-banners/banner-1.jpeg',
     alt: 'Scent Studio — Crafted for Every Moment',
     link: '/shop',
   },
   {
-    image: '/uploads/hero-banners/slide-2.png',
+    image: '/uploads/hero-banners/banner-2.jpeg',
     alt: 'Scent Studio — Elevate Every Moment',
     link: '/shop',
   },
   {
-    image: '/uploads/hero-banners/slide-3.png',
+    image: '/uploads/hero-banners/banner-3.jpeg',
     alt: 'Scent Studio — Discover Scents That Define You',
     link: '/shop',
   },
