@@ -94,18 +94,31 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{ delay: Math.min(index * 0.08, 0.4), duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="group relative"
-    >
+<motion.div
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true, amount: 0.15 }}
+  transition={{
+    delay: Math.min(index * 0.08, 0.4),
+    duration: 0.55,
+    ease: [0.22, 1, 0.36, 1]
+  }}
+  onMouseEnter={() => setIsHovered(true)}
+  onMouseLeave={() => setIsHovered(false)}
+  className="
+    group
+    relative
+    w-full
+    max-w-[320px]
+    sm:max-w-[360px]
+    md:max-w-[380px]
+    lg:max-w-full
+    mx-auto
+  "
+>
       <div className="relative overflow-hidden bg-luxury-warm">
         <Link to={`/product/${product.slug}`}>
-          <div className="aspect-square sm:aspect-[3/4] overflow-hidden">
+          <div className="aspect-[3/4] sm:w-[426px] lg:w-full sm:aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] overflow-hidden w-full min-h-[260px] sm:min-h-[320px] md:min-h-[360px] lg:min-h-[420px]">
             <img
               src={image}
               alt={product.name}
