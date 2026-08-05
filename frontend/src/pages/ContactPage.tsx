@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -31,6 +31,11 @@ const contactInfo = [
 ];
 
 export default function ContactPage() {
+  useEffect(() => {
+    document.title = 'Contact Us | Scent Studio';
+    return () => { document.title = 'Scent Studio | Premium Fragrances in Pakistan'; };
+  }, []);
+
   const [submitting, setSubmitting] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ContactForm>({
     resolver: zodResolver(contactSchema),

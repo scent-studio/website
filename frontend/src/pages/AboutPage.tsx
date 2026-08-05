@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Award, Shield, Sparkles, Gem } from 'lucide-react';
+import { Sparkles, Droplets, Clock, Package, MapPin, Truck } from 'lucide-react';
 import PageHeader from '../components/layout/PageHeader';
 import ScrollReveal from '../components/ui/ScrollReveal';
 import SectionTitle from '../components/ui/SectionTitle';
@@ -8,73 +8,91 @@ import SectionTitle from '../components/ui/SectionTitle';
 const values = [
   {
     icon: Sparkles,
-    title: 'Craftsmanship',
+    title: 'Premium-Inspired',
     description:
-      'Every fragrance is meticulously composed by master perfumers using the finest ingredients from around the world.',
+      'Fragrances inspired by some of the world\'s most loved perfumes, crafted to deliver a luxurious experience.',
   },
   {
-    icon: Gem,
-    title: 'Luxury',
+    icon: Droplets,
+    title: 'Quality Oils',
     description:
-      'We curate only the most exquisite scents that embody elegance, sophistication, and timeless beauty.',
+      'High-quality fragrance oils and carefully selected ingredients for an exceptional scent profile.',
   },
   {
-    icon: Shield,
-    title: 'Authenticity',
-    description: '100% genuine products sourced directly from the most prestigious perfume houses.',
+    icon: Clock,
+    title: 'Long-Lasting',
+    description:
+      'Excellent longevity with smooth projection that stays with you from morning to night.',
   },
   {
-    icon: Award,
-    title: 'Excellence',
+    icon: Package,
+    title: 'Elegant Packaging',
     description:
-      'Uncompromising quality in every aspect, from sourcing to packaging to customer experience.',
+      'Every bottle is designed with attention to detail, giving you a premium look and feel.',
+  },
+  {
+    icon: MapPin,
+    title: 'Made in Karachi',
+    description:
+      'Proudly crafted in Karachi, Pakistan — supporting local artistry and craftsmanship.',
+  },
+  {
+    icon: Truck,
+    title: 'Fast COD Delivery',
+    description:
+      'Nationwide delivery with Cash on Delivery available across Pakistan.',
   },
 ];
 
-const timeline = [
+const collections = [
   {
-    year: '2015',
-    title: 'The Vision',
-    description:
-      "Scent Studio was founded with a mission to bring the world's finest perfumes to discerning customers.",
+    name: 'Fateh',
+    inspired: 'Le Male Elixir',
+    description: 'Our signature bestseller. A bold, fresh, and confident fragrance perfect for everyday wear.',
   },
   {
-    year: '2017',
-    title: 'Global Partnerships',
-    description:
-      'Established exclusive partnerships with renowned perfume houses across France, Italy, and the Middle East.',
+    name: 'Legacy',
+    inspired: 'Office for Men',
+    description: 'A clean, modern, and professional scent with excellent performance.',
   },
   {
-    year: '2019',
-    title: 'Digital Expansion',
-    description:
-      'Launched our e-commerce platform, bringing luxury fragrance shopping to customers worldwide.',
+    name: 'CEO',
+    inspired: 'Signature Blend',
+    description: 'A sophisticated fragrance made for those who want to leave a powerful first impression.',
   },
   {
-    year: '2021',
-    title: 'Curated Collections',
-    description: 'Introduced signature curated collections, each telling a unique olfactory story.',
+    name: 'Shaheen',
+    inspired: 'Signature Blend',
+    description: 'Created with the spirit of ambition, freedom, and strength — a fragrance that represents confidence.',
   },
   {
-    year: '2023',
-    title: 'Sustainability',
-    description:
-      'Committed to sustainable sourcing and eco-friendly packaging across all our products.',
+    name: 'Scent Days',
+    inspired: 'Khamrah',
+    description: 'Warm notes of cinnamon, vanilla, amber, and spices for a rich, comforting experience.',
   },
   {
-    year: '2025',
-    title: 'Global Recognition',
-    description:
-      'Recognized as one of the top luxury fragrance retailers with a presence in 50+ countries.',
+    name: 'Rosaria',
+    inspired: 'Gucci Flora',
+    description: 'A graceful floral fragrance perfect for those who love elegance and freshness.',
+  },
+  {
+    name: 'Lush Euphoria',
+    inspired: 'Fakhar',
+    description: 'A vibrant feminine fragrance offering freshness with a soft floral touch.',
   },
 ];
 
 export default function AboutPage() {
+  useEffect(() => {
+    document.title = 'About Scent Studio | Premium Fragrances Pakistan';
+    return () => { document.title = 'Scent Studio | Premium Fragrances in Pakistan'; };
+  }, []);
+
   return (
     <div>
       <PageHeader
-        title="Our Story"
-        subtitle="A journey of passion, craftsmanship, and the art of fine fragrances"
+        title="About Scent Studio"
+        subtitle="Born in Karachi. Crafted for Pakistan."
         breadcrumbs={[{ label: 'Home', path: '/' }, { label: 'About' }]}
       />
 
@@ -84,22 +102,21 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <ScrollReveal variant="slideInLeft">
               <div>
-                <SectionTitle title="The Scent Studio Philosophy" align="left" className="mb-8" />
+                <SectionTitle title="Our Story" align="left" className="mb-8" />
                 <p className="text-luxury-steel leading-relaxed mb-5 text-sm md:text-base">
-                  At Scent Studio, we believe that a signature scent is more than just a
-                  fragrance—it&apos;s an expression of identity, a memory captured in a bottle, and a
-                  journey of the senses.
+                  Founded in May 2025, Scent Studio was created with one simple vision: to make
+                  premium-inspired fragrances accessible without the premium price tag.
                 </p>
                 <p className="text-luxury-steel leading-relaxed mb-5 text-sm md:text-base">
-                  Founded in 2015, we have dedicated ourselves to curating the finest collection of
-                  luxury perfumes from the most prestigious houses around the world. Each fragrance
-                  in our collection is carefully selected for its artistry, quality, and ability to
-                  evoke emotion.
+                  Every fragrance we create is carefully blended using high-quality fragrance oils,
+                  fine raw materials, and premium-grade ingredients to deliver an experience that
+                  feels luxurious from the first spray to the final dry down.
                 </p>
                 <p className="text-luxury-steel leading-relaxed text-sm md:text-base">
-                  From the sun-drenched fields of Grasse to the ancient perfume markets of the Middle
-                  East, we travel the globe to bring you scents that tell stories of tradition,
-                  innovation, and unparalleled craftsmanship.
+                  We believe great perfume shouldn&apos;t cost a fortune. At Scent Studio, we focus
+                  on creating fragrances with excellent longevity, smooth projection, and refined
+                  scent profiles inspired by some of the world&apos;s most loved perfumes. Each
+                  bottle is designed to give you confidence, elegance, and lasting memories.
                 </p>
               </div>
             </ScrollReveal>
@@ -111,7 +128,7 @@ export default function AboutPage() {
                 <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-luxury-border shadow-card bg-luxury-warm">
                   <img
                     src="https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=900&q=80"
-                    alt="Luxury perfume craftsmanship"
+                    alt="Scent Studio perfume craftsmanship"
                     className="h-full w-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-luxury-ink/35 via-transparent to-transparent" />
@@ -126,10 +143,10 @@ export default function AboutPage() {
       <section className="py-20 md:py-24 bg-luxury-ivory">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionTitle
-            title="Our Values"
-            subtitle="The principles that guide every bottle we curate."
+            title="Why Choose Scent Studio"
+            subtitle="The principles that guide every bottle we create."
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {values.map((v, idx) => (
               <ScrollReveal key={v.title} delay={idx * 0.1} variant="scaleIn">
                 <motion.div
@@ -149,36 +166,63 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Journey */}
+      {/* Collection */}
       <section className="py-20 md:py-24 bg-luxury-cream">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionTitle
-            title="Our Journey"
-            subtitle="Milestones that shaped Scent Studio."
+            title="Our Collection"
+            subtitle="Designed for every personality and occasion."
           />
-          <div className="relative mt-4">
-            <div className="absolute left-[1.25rem] top-3 bottom-3 w-px bg-gradient-to-b from-luxury-gold/50 via-luxury-border to-transparent hidden sm:block" />
-            <div className="space-y-6">
-              {timeline.map((item, idx) => (
-                <ScrollReveal key={item.year} delay={idx * 0.08}>
-                  <div className="flex gap-5 sm:gap-6">
-                    <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-luxury-white border border-luxury-gold/30 text-[10px] font-semibold tracking-wide text-luxury-gold-dark shadow-soft">
-                      {item.year.slice(2)}
-                    </div>
-                    <div className="flex-1 rounded-xl border border-luxury-border bg-luxury-white p-5 shadow-card">
-                      <div className="flex flex-wrap items-baseline gap-2 mb-1.5">
-                        <span className="text-xs font-medium tracking-wider uppercase text-luxury-gold">
-                          {item.year}
-                        </span>
-                        <h3 className="text-lg font-serif text-luxury-charcoal">{item.title}</h3>
-                      </div>
-                      <p className="text-sm text-luxury-steel leading-relaxed">{item.description}</p>
-                    </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+            {collections.map((item, idx) => (
+              <ScrollReveal key={item.name} delay={idx * 0.08} variant="scaleIn">
+                <motion.div
+                  whileHover={{ y: -4 }}
+                  transition={{ duration: 0.25 }}
+                  className="h-full p-6 rounded-xl bg-luxury-white border border-luxury-border hover:border-luxury-gold/40 transition-colors duration-300 shadow-card"
+                >
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <h3 className="text-lg font-serif text-luxury-charcoal">{item.name}</h3>
+                    <span className="text-[11px] text-luxury-gold tracking-wider uppercase">
+                      {item.inspired}
+                    </span>
                   </div>
-                </ScrollReveal>
-              ))}
-            </div>
+                  <p className="text-sm text-luxury-steel leading-relaxed">{item.description}</p>
+                </motion.div>
+              </ScrollReveal>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* Promise */}
+      <section className="py-20 md:py-24 bg-luxury-ivory">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <ScrollReveal>
+            <SectionTitle
+              title="Our Promise"
+              subtitle="Quality you can smell. Prices you can trust."
+            />
+            <p className="text-luxury-steel leading-relaxed text-sm md:text-base max-w-2xl mx-auto mt-6">
+              Every bottle from Scent Studio is prepared with care, passion, and attention to quality.
+              We never compromise on the materials we use because we believe every customer deserves
+              a fragrance that looks premium, smells luxurious, and performs exceptionally.
+            </p>
+            <p className="text-luxury-steel leading-relaxed text-sm md:text-base max-w-2xl mx-auto mt-4">
+              Whether you&apos;re buying your first perfume or growing your collection, Scent Studio
+              is here to help you discover fragrances that match your style without exceeding your
+              budget.
+            </p>
+            <div className="mt-10 inline-flex flex-col items-center gap-1 text-luxury-charcoal">
+              <span className="font-serif text-xl tracking-wide">Scent Studio</span>
+              <span className="text-xs text-luxury-steel tracking-[0.2em] uppercase">
+                Born in Karachi &bull; Since May 2025
+              </span>
+              <span className="text-[11px] text-luxury-gold tracking-[0.15em] mt-1">
+                Premium Fragrances. Budget Friendly. Unforgettable Impressions.
+              </span>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
     </div>

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './store';
 import { fetchCart } from './store/slices/cartSlice';
-import { fetchFeatured, fetchBestSellers, fetchNewArrivals } from './store/slices/productSlice';
+
 import Layout from './components/layout/Layout';
 import AdminLayout from './components/admin/AdminLayout';
 
@@ -117,9 +117,6 @@ function AppContent() {
     if (localStorage.getItem('token')) {
       dispatch(fetchCart());
     }
-    dispatch(fetchFeatured());
-    dispatch(fetchBestSellers());
-    dispatch(fetchNewArrivals());
   }, [dispatch]);
 
   const isAdminRoute = location.pathname.startsWith('/admin');

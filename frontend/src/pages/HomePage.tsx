@@ -12,6 +12,11 @@ import { productService } from '../services/productService';
 import type { Product } from '../types';
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = 'Scent Studio | Premium Fragrances in Pakistan';
+    return () => { document.title = 'Scent Studio | Premium Fragrances in Pakistan'; };
+  }, []);
+
   const [bundles, setBundles] = useState<Product[]>([]);
   const [newArrivals100, setNewArrivals100] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);

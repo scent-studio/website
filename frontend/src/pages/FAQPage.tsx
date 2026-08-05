@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search } from 'lucide-react';
 import PageHeader from '../components/layout/PageHeader';
@@ -31,6 +31,11 @@ const faqs: FAQItem[] = [
 const categories = [...new Set(faqs.map((f) => f.category))];
 
 export default function FAQPage() {
+  useEffect(() => {
+    document.title = 'FAQ | Scent Studio';
+    return () => { document.title = 'Scent Studio | Premium Fragrances in Pakistan'; };
+  }, []);
+
   const [openId, setOpenId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
