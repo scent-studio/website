@@ -15,7 +15,7 @@ const app = express();
 let isConnected = false;
 
 async function connectDB() {
-  if (isConnected) return;
+  if (isConnected && mongoose.connection.readyState === 1) return;
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     throw new Error('MONGODB_URI environment variable is not set');
@@ -23,6 +23,10 @@ async function connectDB() {
   try {
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 5,
+      minPoolSize: 1,
+      maxIdleTimeMS: 30000,
+      bufferCommands: false,
     });
     isConnected = true;
   } catch (error: any) {

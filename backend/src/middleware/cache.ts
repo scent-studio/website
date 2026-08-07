@@ -16,7 +16,15 @@ const setCache = (key: string, value: any, ttlMs = DEFAULT_TTL_MS) => {
   cache.set(key, { value, expiresAt: Date.now() + ttlMs });
 };
 
-const clearCache = () => cache.clear();
+const clearCache = () => {
+  cache.clear();
+  try {
+    const HomeCache = require('../models/HomeCache');
+    HomeCache.deleteOne({ _id: 'home' }).catch(() => {});
+  } catch {
+    /* model may be unavailable during early boot */
+  }
+};
 
 const clearCachePrefix = (prefix: string) => {
   for (const key of cache.keys()) {
@@ -27,7 +35,14 @@ const clearCachePrefix = (prefix: string) => {
 const cacheMiddleware = (ttlMs = DEFAULT_TTL_MS) => {
   return (req: any, res: any, next: any) => {
     if (req.method !== 'GET') return next();
-    res.setHeader('Cache-Control', `public, s-maxage=${Math.floor(ttlMs / 1000)}, max-age=${Math.floor(ttlMs / 1000)}`);
+    const seconds = Math.floor(ttlMs / 1000);
+    // Vercel CDN + browsers; SWR keeps serving stale while revalidating
+    res.setHeader(
+      'Cache-Control',
+      `public, s-maxage=${seconds}, max-age=${seconds}, stale-while-revalidate=${seconds * 2}`
+    );
+    res.setHeader('CDN-Cache-Control', `public, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`);
+    res.setHeader('Vercel-CDN-Cache-Control', `public, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`);
     const key = req.originalUrl;
     const cached = getCache(key);
     if (cached) {

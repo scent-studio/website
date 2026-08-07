@@ -1,12 +1,15 @@
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Brand = require('../models/Brand');
+const HomeCache = require('../models/HomeCache');
+const ProductCard = require('../models/ProductCard');
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const mongoose = require('mongoose');
 const { clearCache, getCache, setCache } = require('../middleware/cache');
 const { generateThumbnail } = require('../utils/thumbnail');
+const { syncProductCard, deleteProductCard } = require('../utils/syncProductCard');
 
 const listProjection = {
   name: 1,
@@ -32,6 +35,8 @@ const listProjection = {
   stock: 1,
   createdAt: 1,
 };
+
+const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
 
 const mapToImageUrls = (products: any[]) =>
   products.map((p) => {
@@ -212,6 +217,8 @@ const createProduct = asyncHandler(async (req: any, res: any) => {
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo');
 
+  await syncProductCard(populated);
+
   res.status(201).json(ApiResponse.created(populated));
 });
 
@@ -238,6 +245,8 @@ const updateProduct = asyncHandler(async (req: any, res: any) => {
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo');
 
+  await syncProductCard(populated);
+
   res.status(200).json(ApiResponse.updated(populated));
 });
 
@@ -247,6 +256,8 @@ const deleteProduct = asyncHandler(async (req: any, res: any) => {
   if (!product) {
     throw ApiError.notFound('Product not found');
   }
+
+  await deleteProductCard(product._id);
 
   res.status(200).json(ApiResponse.deleted('Product deleted successfully'));
 });
@@ -299,66 +310,57 @@ const getNewArrivals = asyncHandler(async (req: any, res: any) => {
   res.status(200).json(ApiResponse.success(mapToImageUrls(products)));
 });
 
-const homePopulateStages = [
-  {
-    $lookup: {
-      from: 'categories',
-      localField: 'category',
-      foreignField: '_id',
-      as: 'category',
-      pipeline: [{ $project: { name: 1, slug: 1 } }],
-    },
-  },
-  { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
-  {
-    $lookup: {
-      from: 'brands',
-      localField: 'brand',
-      foreignField: '_id',
-      as: 'brand',
-      pipeline: [{ $project: { name: 1, slug: 1, logo: 1 } }],
-    },
-  },
-  { $unwind: { path: '$brand', preserveNullAndEmptyArrays: true } },
-  { $project: listProjection },
-];
+const homeQuery = (filter: Record<string, unknown>, limit = 4) =>
+  ProductCard.find({ isVisible: true, ...filter })
+    .sort('-createdAt')
+    .limit(limit)
+    .lean();
 
-const homeFacet = (match: Record<string, unknown>, limit: number) => [
-  { $match: { isVisible: true, ...match } },
-  { $sort: { createdAt: -1 as const } },
-  { $limit: limit },
-  ...homePopulateStages,
-];
+const buildHomePayload = async () => {
+  const [bundles, newArrivals, newArrivals100, bestSellers, women, men, unisex] =
+    await Promise.all([
+      homeQuery({ isGiftSet: true }),
+      homeQuery({ isNewArrival: true }),
+      homeQuery({
+        isNewArrival: true,
+        'sizes.size': { $regex: '100', $options: 'i' },
+      }),
+      homeQuery({ isBestSeller: true }),
+      homeQuery({ gender: 'female' }),
+      homeQuery({ gender: 'male' }),
+      homeQuery({ gender: 'unisex' }),
+    ]);
+
+  return {
+    bundles: mapToImageUrls(bundles),
+    newArrivals: mapToImageUrls(newArrivals),
+    newArrivals100: mapToImageUrls(newArrivals100),
+    bestSellers: mapToImageUrls(bestSellers),
+    women: mapToImageUrls(women),
+    men: mapToImageUrls(men),
+    unisex: mapToImageUrls(unisex),
+  };
+};
 
 const getHomeData = asyncHandler(async (_req: any, res: any) => {
-  const [result] = await Product.aggregate([
-    {
-      $facet: {
-        bundles: homeFacet({ isGiftSet: true }, 4),
-        newArrivals: homeFacet({ isNewArrival: true }, 4),
-        newArrivals100: homeFacet(
-          { isNewArrival: true, 'sizes.size': { $regex: '100', $options: 'i' } },
-          4
-        ),
-        bestSellers: homeFacet({ isBestSeller: true }, 4),
-        women: homeFacet({ gender: 'female' }, 4),
-        men: homeFacet({ gender: 'male' }, 4),
-        unisex: homeFacet({ gender: 'unisex' }, 4),
-      },
-    },
-  ]);
+  const cached = await HomeCache.findById('home').lean();
+  if (
+    cached?.data &&
+    cached.builtAt &&
+    Date.now() - new Date(cached.builtAt).getTime() < HOME_CACHE_TTL_MS
+  ) {
+    return res.status(200).json(ApiResponse.success(cached.data));
+  }
 
-  res.status(200).json(
-    ApiResponse.success({
-      bundles: mapToImageUrls(result.bundles),
-      newArrivals: mapToImageUrls(result.newArrivals),
-      newArrivals100: mapToImageUrls(result.newArrivals100),
-      bestSellers: mapToImageUrls(result.bestSellers),
-      women: mapToImageUrls(result.women),
-      men: mapToImageUrls(result.men),
-      unisex: mapToImageUrls(result.unisex),
-    })
-  );
+  const payload = await buildHomePayload();
+
+  HomeCache.findByIdAndUpdate(
+    'home',
+    { data: payload, builtAt: new Date() },
+    { upsert: true }
+  ).catch(() => {});
+
+  res.status(200).json(ApiResponse.success(payload));
 });
 
 const getRelated = asyncHandler(async (req: any, res: any) => {
