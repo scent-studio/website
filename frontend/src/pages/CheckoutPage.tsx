@@ -35,17 +35,29 @@ const checkoutSchema = z.object({
   shippingStreet: z.string().min(1, 'Address is required'),
   shippingApartment: z.string().optional(),
   shippingCity: z.string().min(1, 'City is required'),
+  shippingState: z.string().min(1, 'Province/State is required'),
   shippingZip: z.string().optional(),
   shippingCountry: z.string().min(1, 'Country is required'),
   billingSame: z.boolean(),
   billingStreet: z.string().optional(),
   billingApartment: z.string().optional(),
   billingCity: z.string().optional(),
+  billingState: z.string().optional(),
   billingZip: z.string().optional(),
   billingCountry: z.string().optional(),
   paymentMethod: z.enum(['cash_on_delivery', 'bank_transfer']),
   notes: z.string().optional(),
 });
+
+const PAKISTAN_PROVINCES = [
+  'Punjab',
+  'Sindh',
+  'Khyber Pakhtunkhwa',
+  'Balochistan',
+  'Islamabad Capital Territory',
+  'Gilgit-Baltistan',
+  'Azad Kashmir',
+];
 
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
@@ -96,6 +108,7 @@ export default function CheckoutPage() {
       lastName: user?.name?.split(' ').slice(1).join(' ') || '',
       phone: user?.phone || '',
       shippingCountry: 'Pakistan',
+      shippingState: '',
       billingSame: true,
       paymentMethod: 'cash_on_delivery',
     },
@@ -141,8 +154,8 @@ export default function CheckoutPage() {
         street: (data[`${prefix}Street` as keyof CheckoutForm] as string) || data.shippingStreet,
         apartment: (data[`${prefix}Apartment` as keyof CheckoutForm] as string) || '',
         city: (data[`${prefix}City` as keyof CheckoutForm] as string) || data.shippingCity,
-        state: '',
-        zip: (data[`${prefix}Zip` as keyof CheckoutForm] as string) || '',
+        state: (data[`${prefix}State` as keyof CheckoutForm] as string) || data.shippingState,
+        zip: (data[`${prefix}Zip` as keyof CheckoutForm] as string) || data.shippingZip || 'N/A',
         country: (data[`${prefix}Country` as keyof CheckoutForm] as string) || data.shippingCountry,
       });
 
@@ -247,9 +260,24 @@ export default function CheckoutPage() {
                     <option value="Pakistan">Pakistan</option>
                   </select>
                 </div>
+                <Input label="Street Address" placeholder="House 12, Street 5" error={errors.shippingStreet?.message} {...register('shippingStreet')} />
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Input label="Street Address" placeholder="House 12, Street 5" error={errors.shippingStreet?.message} {...register('shippingStreet')} />
                   <Input label="City" placeholder="Lahore" error={errors.shippingCity?.message} {...register('shippingCity')} />
+                  <div>
+                    <label className="block text-sm font-medium text-luxury-charcoal mb-1.5">Province / State</label>
+                    <select
+                      {...register('shippingState')}
+                      className="w-full px-4 py-3 bg-luxury-white border border-luxury-border rounded-lg text-luxury-charcoal outline-none focus:border-luxury-gold focus:ring-1 focus:ring-luxury-gold/20 transition-all"
+                    >
+                      <option value="">Select province</option>
+                      {PAKISTAN_PROVINCES.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                    {errors.shippingState?.message && (
+                      <p className="mt-1 text-xs text-red-600">{errors.shippingState.message}</p>
+                    )}
+                  </div>
                   <Input label="Postal Code (optional)" placeholder="54000" {...register('shippingZip')} />
                 </div>
                 <Input label="Apartment, suite, etc. (optional)" placeholder="Apt, floor, landmark..." {...register('shippingApartment')} />
@@ -264,6 +292,18 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input label="Billing Street" {...register('billingStreet')} />
                       <Input label="Billing City" {...register('billingCity')} />
+                      <div>
+                        <label className="block text-sm font-medium text-luxury-charcoal mb-1.5">Billing Province</label>
+                        <select
+                          {...register('billingState')}
+                          className="w-full px-4 py-3 bg-luxury-white border border-luxury-border rounded-lg text-luxury-charcoal outline-none focus:border-luxury-gold focus:ring-1 focus:ring-luxury-gold/20 transition-all"
+                        >
+                          <option value="">Select province</option>
+                          {PAKISTAN_PROVINCES.map((p) => (
+                            <option key={p} value={p}>{p}</option>
+                          ))}
+                        </select>
+                      </div>
                       <Input label="Billing Postal Code" {...register('billingZip')} />
                       <Input label="Billing Country" {...register('billingCountry')} />
                     </div>

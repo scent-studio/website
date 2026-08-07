@@ -29,8 +29,8 @@ const createOrderRules = [
     .trim()
     .notEmpty().withMessage('Shipping state is required'),
   body('shippingAddress.zip')
-    .trim()
-    .notEmpty().withMessage('Shipping ZIP is required'),
+    .optional({ values: 'falsy' })
+    .trim(),
   body('shippingAddress.country')
     .trim()
     .notEmpty().withMessage('Shipping country is required'),
@@ -52,8 +52,8 @@ const createOrderRules = [
     .trim()
     .notEmpty().withMessage('Billing state is required'),
   body('billingAddress.zip')
-    .trim()
-    .notEmpty().withMessage('Billing ZIP is required'),
+    .optional({ values: 'falsy' })
+    .trim(),
   body('billingAddress.country')
     .trim()
     .notEmpty().withMessage('Billing country is required'),
