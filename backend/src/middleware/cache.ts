@@ -42,5 +42,5 @@ const cacheMiddleware = (ttlMs = DEFAULT_TTL_MS) => {
   };
 };
 
-module.exports = { cacheMiddleware, clearCache, clearCachePrefix };
+module.exports = { cacheMiddleware, clearCache, clearCachePrefix, getCache, setCache };
 export {};

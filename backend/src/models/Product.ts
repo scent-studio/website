@@ -40,6 +40,10 @@ const productSchema = new mongoose.Schema(
         message: 'Cannot have more than 10 images',
       },
     },
+    thumbnail: {
+      type: String,
+      default: null,
+    },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
@@ -152,6 +156,10 @@ productSchema.index({ brand: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ isFeatured: 1, isTrending: 1, isBestSeller: 1, isNewArrival: 1 });
+productSchema.index({ isVisible: 1, isGiftSet: 1, createdAt: -1 });
+productSchema.index({ isVisible: 1, isNewArrival: 1, createdAt: -1 });
+productSchema.index({ isVisible: 1, isBestSeller: 1, createdAt: -1 });
+productSchema.index({ isVisible: 1, gender: 1, createdAt: -1 });
 
 productSchema.pre('save', function (this: any, next: Function) {
   if (this.isModified('name') && !this.slug) {

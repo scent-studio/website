@@ -122,7 +122,8 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             <img
               src={image}
               alt={product.name}
-              loading="lazy"
+              loading={index < 4 ? 'eager' : 'lazy'}
+              decoding="async"
               className={cn(
                 'w-full h-full object-cover transition-transform duration-700',
                 isHovered && 'scale-105'

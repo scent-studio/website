@@ -5,12 +5,13 @@ const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const mongoose = require('mongoose');
-const { clearCache } = require('../middleware/cache');
+const { clearCache, getCache, setCache } = require('../middleware/cache');
+const { generateThumbnail } = require('../utils/thumbnail');
 
 const listProjection = {
   name: 1,
   slug: 1,
-  images: { $slice: 1 },
+  thumbnail: 1,
   price: 1,
   discount: 1,
   discountedPrice: 1,
@@ -32,19 +33,30 @@ const listProjection = {
   createdAt: 1,
 };
 
-const imageUrlFor = (id: any) => `/api/products/image/${id}/0`;
-
 const mapToImageUrls = (products: any[]) =>
   products.map((p) => {
     const doc = p.toObject ? p.toObject() : { ...p };
-    if (Array.isArray(doc.images) && doc.images.length > 0) {
-      doc.images = doc.images.map((_: any, i: number) => `/api/products/image/${doc._id}/${i}`);
+    if (doc.thumbnail) {
+      doc.images = [doc.thumbnail];
+    } else {
+      doc.images = [`/api/products/image/${doc._id}/0`];
     }
+    delete doc.thumbnail;
     return doc;
   });
 
+const IMAGE_CACHE_TTL = 60 * 60 * 1000;
+
 const getProductImage = asyncHandler(async (req: any, res: any) => {
-  const product = await Product.findById(req.params.id, { images: 1 });
+  const cacheKey = `img:${req.params.id}:${req.params.index || '0'}`;
+  const cached = getCache(cacheKey);
+  if (cached) {
+    res.setHeader('Content-Type', cached.mime);
+    res.setHeader('Cache-Control', 'public, s-maxage=3600, max-age=3600');
+    return res.send(cached.buffer);
+  }
+
+  const product = await Product.findById(req.params.id, { images: 1 }).lean();
   const index = parseInt(req.params.index || '0', 10);
 
   if (!product || !Array.isArray(product.images) || !product.images[index]) {
@@ -59,6 +71,8 @@ const getProductImage = asyncHandler(async (req: any, res: any) => {
 
   const mime = match[1];
   const buffer = Buffer.from(match[2], 'base64');
+
+  setCache(cacheKey, { mime, buffer }, IMAGE_CACHE_TTL);
 
   res.setHeader('Content-Type', mime);
   res.setHeader('Cache-Control', 'public, s-maxage=3600, max-age=3600');
@@ -189,7 +203,11 @@ const getProductBySlug = asyncHandler(async (req: any, res: any) => {
 
 const createProduct = asyncHandler(async (req: any, res: any) => {
   clearCache();
-  const product = await Product.create(req.body);
+  const body = { ...req.body };
+  if (body.images?.[0]) {
+    body.thumbnail = await generateThumbnail(body.images[0]);
+  }
+  const product = await Product.create(body);
   const populated = await Product.findById(product._id)
     .populate('category', 'name slug')
     .populate('brand', 'name slug logo');
@@ -209,6 +227,10 @@ const updateProduct = asyncHandler(async (req: any, res: any) => {
   if (discountedPrice !== undefined) product.discountedPrice = discountedPrice;
   if (discount !== undefined) product.discount = discount;
   Object.assign(product, rest);
+
+  if (rest.images?.[0]) {
+    product.thumbnail = await generateThumbnail(rest.images[0]);
+  }
 
   await product.save();
 
@@ -277,37 +299,64 @@ const getNewArrivals = asyncHandler(async (req: any, res: any) => {
   res.status(200).json(ApiResponse.success(mapToImageUrls(products)));
 });
 
-const getHomeData = asyncHandler(async (req: any, res: any) => {
-  const baseQuery = (extra: any, limit: number) =>
-    Product.find({ ...extra, isVisible: true }, listProjection)
-      .populate('category', 'name slug')
-      .populate('brand', 'name slug logo')
-      .limit(limit)
-      .sort('-createdAt');
+const homePopulateStages = [
+  {
+    $lookup: {
+      from: 'categories',
+      localField: 'category',
+      foreignField: '_id',
+      as: 'category',
+      pipeline: [{ $project: { name: 1, slug: 1 } }],
+    },
+  },
+  { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+  {
+    $lookup: {
+      from: 'brands',
+      localField: 'brand',
+      foreignField: '_id',
+      as: 'brand',
+      pipeline: [{ $project: { name: 1, slug: 1, logo: 1 } }],
+    },
+  },
+  { $unwind: { path: '$brand', preserveNullAndEmptyArrays: true } },
+  { $project: listProjection },
+];
 
-  const [bundles, newArrivals, bestSellers, women, men, unisex] = await Promise.all([
-    baseQuery({ isGiftSet: true }, 4),
-    baseQuery({ isNewArrival: true }, 8),
-    baseQuery({ isBestSeller: true }, 4),
-    baseQuery({ gender: 'female' }, 4),
-    baseQuery({ gender: 'male' }, 4),
-    baseQuery({ gender: 'unisex' }, 4),
+const homeFacet = (match: Record<string, unknown>, limit: number) => [
+  { $match: { isVisible: true, ...match } },
+  { $sort: { createdAt: -1 as const } },
+  { $limit: limit },
+  ...homePopulateStages,
+];
+
+const getHomeData = asyncHandler(async (_req: any, res: any) => {
+  const [result] = await Product.aggregate([
+    {
+      $facet: {
+        bundles: homeFacet({ isGiftSet: true }, 4),
+        newArrivals: homeFacet({ isNewArrival: true }, 4),
+        newArrivals100: homeFacet(
+          { isNewArrival: true, 'sizes.size': { $regex: '100', $options: 'i' } },
+          4
+        ),
+        bestSellers: homeFacet({ isBestSeller: true }, 4),
+        women: homeFacet({ gender: 'female' }, 4),
+        men: homeFacet({ gender: 'male' }, 4),
+        unisex: homeFacet({ gender: 'unisex' }, 4),
+      },
+    },
   ]);
-
-  const allNew = newArrivals;
-  const newArrivals100 = allNew
-    .filter((p: any) => p.sizes?.some((s: any) => s.size.includes('100')))
-    .slice(0, 4);
 
   res.status(200).json(
     ApiResponse.success({
-      bundles: mapToImageUrls(bundles),
-      newArrivals: mapToImageUrls(allNew.slice(0, 4)),
-      newArrivals100: mapToImageUrls(newArrivals100),
-      bestSellers: mapToImageUrls(bestSellers),
-      women: mapToImageUrls(women),
-      men: mapToImageUrls(men),
-      unisex: mapToImageUrls(unisex),
+      bundles: mapToImageUrls(result.bundles),
+      newArrivals: mapToImageUrls(result.newArrivals),
+      newArrivals100: mapToImageUrls(result.newArrivals100),
+      bestSellers: mapToImageUrls(result.bestSellers),
+      women: mapToImageUrls(result.women),
+      men: mapToImageUrls(result.men),
+      unisex: mapToImageUrls(result.unisex),
     })
   );
 });
