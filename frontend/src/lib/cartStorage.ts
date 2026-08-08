@@ -1,4 +1,5 @@
 import type { LocalCartItem, Product } from '../types';
+import { findProductSize } from './utils';
 
 const CART_KEY = 'cart';
 const CART_EVENT = 'cart-updated';
@@ -34,13 +35,25 @@ export function getCartSubtotal(items: LocalCartItem[] = getLocalCart()): number
 
 export function getProductUnitPrice(product: Partial<Product>, size?: string): number {
   if (size && product.sizes?.length) {
-    const match = product.sizes.find((s) => s.size === size);
-    if (match) return match.price;
+    const match = findProductSize(product.sizes, size);
+    if (match && match.price != null && Number(match.price) > 0) {
+      const sizePrice = Number(match.price);
+      // If this size price is the MRP and product has a sale price, use sale when single size
+      if (
+        product.discount &&
+        product.discount > 0 &&
+        product.discountedPrice &&
+        (product.sizes.length <= 1 || Math.abs(sizePrice - Number(product.price || 0)) < 1)
+      ) {
+        return Number(product.discountedPrice);
+      }
+      return sizePrice;
+    }
   }
   if (product.discount && product.discount > 0 && product.discountedPrice) {
-    return product.discountedPrice;
+    return Number(product.discountedPrice) || 0;
   }
-  return product.price || 0;
+  return Number(product.price) || 0;
 }
 
 export function addToLocalCart(

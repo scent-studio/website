@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { addToWishlist, removeFromWishlist, toggleWishlistLocal } from '../../store/slices/wishlistSlice';
-import { cn, formatPrice, getDisplayPrice } from '../../lib/utils';
+import { cn, formatPrice, getDisplayPrice, findProductSize } from '../../lib/utils';
 import { addToLocalCart, getProductUnitPrice } from '../../lib/cartStorage';
 import { isInLocalWishlist, onWishlistChange } from '../../lib/wishlistStorage';
 import Rating from '../ui/Rating';
@@ -28,8 +28,13 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const [localWishlisted, setLocalWishlisted] = useState(() => isInLocalWishlist(product._id));
 
   const sizes = product.sizes || [];
-  const defaultSize = sizes[0]?.size || '';
-  const [selectedSize, setSelectedSize] = useState(defaultSize);
+  const preferredDefault =
+    findProductSize(sizes, '100ml')?.size || sizes[0]?.size || '';
+  const [selectedSize, setSelectedSize] = useState(preferredDefault);
+
+  useEffect(() => {
+    setSelectedSize(findProductSize(sizes, '100ml')?.size || sizes[0]?.size || '');
+  }, [product._id]);
 
   useEffect(() => {
     const sync = () => setLocalWishlisted(isInLocalWishlist(product._id));
@@ -39,11 +44,14 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 
   const isWishlisted = wishlistIds.includes(product._id) || localWishlisted;
   const brandName = product.brand && typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand;
-  const { price: displayBase, original, hasDiscount, percent } = getDisplayPrice(product);
+  const { price: displayBase, original, hasDiscount, percent } = getDisplayPrice(
+    product,
+    selectedSize || '100ml'
+  );
   const unitPrice = selectedSize
     ? getProductUnitPrice(product, selectedSize)
     : displayBase;
-  const selectedSizeInfo = sizes.find((s) => s.size === selectedSize);
+  const selectedSizeInfo = findProductSize(sizes, selectedSize);
   const inStock = selectedSizeInfo
     ? selectedSizeInfo.stock > 0
     : (product.inStock ?? product.stock > 0);
@@ -172,7 +180,9 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 )}
               >
                 <span className="block">{s.size}</span>
-                <span className="block text-[10px] mt-0.5 opacity-70">{formatPrice(s.price)}</span>
+                <span className="block text-[10px] mt-0.5 opacity-70">
+                  {formatPrice(Number(s.price) || 0)}
+                </span>
               </button>
             ))}
           </div>

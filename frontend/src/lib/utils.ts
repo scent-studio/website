@@ -23,22 +23,102 @@ export function formatPrice(price: number, currency: string = 'PKR'): string {
   }).format(amount);
 }
 
-export function getDisplayPrice(product: {
-  price: number;
-  discount?: number;
-  discountedPrice?: number;
-}): { price: number; original?: number; hasDiscount: boolean; percent: number } {
+type SizeLike = { size?: string; price?: number };
+
+function normalizeSizeLabel(size: string): string {
+  return String(size || '')
+    .toLowerCase()
+    .replace(/\s+/g, '');
+}
+
+/** Find a size row; prefers an exact/contains match for preferredSize (e.g. 100ml). */
+export function findProductSize<T extends SizeLike>(
+  sizes: T[] | undefined,
+  preferredSize?: string
+): T | undefined {
+  if (!sizes?.length) return undefined;
+  if (preferredSize) {
+    const needle = normalizeSizeLabel(preferredSize);
+    const needleNum = needle.replace(/ml$/, '');
+    const match = sizes.find((s) => {
+      const n = normalizeSizeLabel(s.size || '');
+      return n === needle || n.includes(needle) || (needleNum && n.includes(needleNum));
+    });
+    if (match) return match;
+  }
+  return sizes[0];
+}
+
+export function getDisplayPrice(
+  product: {
+    price: number;
+    discount?: number;
+    discountedPrice?: number;
+    sizes?: SizeLike[];
+  },
+  preferredSize?: string
+): { price: number; original?: number; hasDiscount: boolean; percent: number; sizeLabel?: string } {
   const hasDiscount = !!(product.discount && product.discount > 0);
-  const price = hasDiscount && product.discountedPrice
-    ? product.discountedPrice
-    : product.price;
+  const size = findProductSize(product.sizes, preferredSize);
+  const sizePrice = size?.price != null ? Number(size.price) : 0;
+
+  // Prefer the concrete size price (e.g. 100ml) when present
+  if (size && sizePrice > 0) {
+    const mrp = Number(product.price) || sizePrice;
+    const sale = Number(product.discountedPrice) || 0;
+
+    // Single size: product-level sale price is the source of truth when discounted
+    if (hasDiscount && sale > 0 && (product.sizes?.length || 0) <= 1) {
+      return {
+        price: sale,
+        original: Math.max(mrp, sizePrice),
+        hasDiscount: true,
+        percent: product.discount || 0,
+        sizeLabel: size.size,
+      };
+    }
+
+    // Multi-size: if this size's price matches MRP, apply product discount
+    if (hasDiscount && sale > 0 && Math.abs(sizePrice - mrp) < 1) {
+      return {
+        price: sale,
+        original: sizePrice,
+        hasDiscount: true,
+        percent: product.discount || 0,
+        sizeLabel: size.size,
+      };
+    }
+
+    // Otherwise show the size's own price
+    if (hasDiscount && sale > 0 && sale < sizePrice && (product.sizes?.length || 0) <= 1) {
+      return {
+        price: sale,
+        original: sizePrice,
+        hasDiscount: true,
+        percent: product.discount || 0,
+        sizeLabel: size.size,
+      };
+    }
+
+    return {
+      price: sizePrice,
+      original: hasDiscount && mrp > sizePrice ? mrp : undefined,
+      hasDiscount: !!(hasDiscount && mrp > sizePrice),
+      percent: product.discount || 0,
+      sizeLabel: size.size,
+    };
+  }
+
+  const price =
+    hasDiscount && product.discountedPrice ? product.discountedPrice : product.price;
   return {
-    price,
+    price: Number(price) || 0,
     original: hasDiscount ? product.price : undefined,
     hasDiscount,
     percent: product.discount || 0,
   };
 }
+
 
 export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {
   const defaultOptions: Intl.DateTimeFormatOptions = {

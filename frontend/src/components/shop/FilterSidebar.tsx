@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import Button from '../ui/Button';
 
 interface FilterSection {
   id: string;
@@ -47,11 +47,38 @@ interface FilterSidebarProps {
 }
 
 export default function FilterSidebar({ isMobileOpen, onMobileClose, onApply, className }: FilterSidebarProps) {
+  const [searchParams] = useSearchParams();
   const [expanded, setExpanded] = useState<string[]>(filterSections.map((s) => s.id));
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [inStock, setInStock] = useState(false);
+  const priceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setSelectedFilters({
+      gender: (searchParams.get('gender') || '').split(',').filter(Boolean),
+      size: (searchParams.get('size') || '').split(',').filter(Boolean),
+    });
+    setMinPrice(searchParams.get('minPrice') || '');
+    setMaxPrice(searchParams.get('maxPrice') || '');
+    setInStock(searchParams.get('inStock') === 'true');
+  }, [searchParams]);
+
+  const emit = (next: FilterSidebarValues) => {
+    onApply?.(next);
+  };
+
+  const currentValues = (
+    overrides: Partial<FilterSidebarValues> = {}
+  ): FilterSidebarValues => ({
+    gender: selectedFilters.gender || [],
+    size: selectedFilters.size || [],
+    minPrice,
+    maxPrice,
+    inStock,
+    ...overrides,
+  });
 
   const toggleSection = (id: string) => {
     setExpanded((prev) =>
@@ -65,7 +92,15 @@ export default function FilterSidebar({ isMobileOpen, onMobileClose, onApply, cl
       const updated = current.includes(value)
         ? current.filter((v) => v !== value)
         : [...current, value];
-      return { ...prev, [sectionId]: updated };
+      const next = { ...prev, [sectionId]: updated };
+      emit(
+        currentValues({
+          gender: next.gender || [],
+          size: next.size || [],
+        })
+      );
+      if (window.innerWidth < 768) onMobileClose?.();
+      return next;
     });
   };
 
@@ -74,17 +109,30 @@ export default function FilterSidebar({ isMobileOpen, onMobileClose, onApply, cl
     setMinPrice('');
     setMaxPrice('');
     setInStock(false);
+    emit({ gender: [], size: [], minPrice: '', maxPrice: '', inStock: false });
   };
 
-  const handleApply = () => {
-    onApply?.({
-      gender: selectedFilters.gender || [],
-      size: selectedFilters.size || [],
-      minPrice,
-      maxPrice,
-      inStock,
-    });
-    onMobileClose?.();
+  const handlePriceChange = (field: 'min' | 'max', value: string) => {
+    const nextMin = field === 'min' ? value : minPrice;
+    const nextMax = field === 'max' ? value : maxPrice;
+    if (field === 'min') setMinPrice(value);
+    else setMaxPrice(value);
+
+    if (priceTimer.current) clearTimeout(priceTimer.current);
+    priceTimer.current = setTimeout(() => {
+      emit(
+        currentValues({
+          minPrice: nextMin,
+          maxPrice: nextMax,
+        })
+      );
+    }, 400);
+  };
+
+  const handleStockChange = (checked: boolean) => {
+    setInStock(checked);
+    emit(currentValues({ inStock: checked }));
+    if (window.innerWidth < 768) onMobileClose?.();
   };
 
   const sidebarContent = (
@@ -103,7 +151,7 @@ export default function FilterSidebar({ isMobileOpen, onMobileClose, onApply, cl
             type="number"
             placeholder="Min"
             value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
+            onChange={(e) => handlePriceChange('min', e.target.value)}
             className="w-full px-3 py-2 bg-luxury-white border border-luxury-border text-luxury-charcoal text-sm outline-none focus:border-luxury-gold/50 transition-colors rounded-lg"
           />
           <span className="text-luxury-steel">to</span>
@@ -111,7 +159,7 @@ export default function FilterSidebar({ isMobileOpen, onMobileClose, onApply, cl
             type="number"
             placeholder="Max"
             value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
+            onChange={(e) => handlePriceChange('max', e.target.value)}
             className="w-full px-3 py-2 bg-luxury-white border border-luxury-border text-luxury-charcoal text-sm outline-none focus:border-luxury-gold/50 transition-colors rounded-lg"
           />
         </div>
@@ -120,6 +168,7 @@ export default function FilterSidebar({ isMobileOpen, onMobileClose, onApply, cl
       {filterSections.map((section) => (
         <div key={section.id}>
           <button
+            type="button"
             onClick={() => toggleSection(section.id)}
             className="flex items-center justify-between w-full py-2 text-sm text-luxury-charcoal font-medium"
           >
@@ -170,16 +219,12 @@ export default function FilterSidebar({ isMobileOpen, onMobileClose, onApply, cl
           <input
             type="checkbox"
             checked={inStock}
-            onChange={(e) => setInStock(e.target.checked)}
+            onChange={(e) => handleStockChange(e.target.checked)}
             className="w-4 h-4 bg-luxury-white border border-luxury-border checked:bg-luxury-gold checked:border-luxury-gold accent-luxury-gold rounded"
           />
           <span className="text-sm text-luxury-steel group-hover:text-luxury-charcoal transition-colors">In Stock Only</span>
         </label>
       </div>
-
-      <Button variant="primary" size="lg" className="w-full" onClick={handleApply}>
-        Apply Filters
-      </Button>
     </div>
   );
 
@@ -210,7 +255,7 @@ export default function FilterSidebar({ isMobileOpen, onMobileClose, onApply, cl
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-display text-luxury-charcoal tracking-wider uppercase">Filters</h3>
-                <button onClick={onMobileClose} className="text-luxury-steel hover:text-luxury-gold">
+                <button type="button" onClick={onMobileClose} className="text-luxury-steel hover:text-luxury-gold">
                   <X size={18} />
                 </button>
               </div>

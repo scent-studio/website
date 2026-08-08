@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronRight, Home } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
-import { fetchProduct, fetchRelated, fetchProducts } from '../store/slices/productSlice';
+import { fetchProduct, fetchRelated } from '../store/slices/productSlice';
 import { productService } from '../services/productService';
 import ProductGallery from '../components/product/ProductGallery';
 import ProductInfo from '../components/product/ProductInfo';
@@ -39,25 +39,64 @@ export default function ProductDetailPage() {
   }, [dispatch, slug]);
 
   useEffect(() => {
-    if (product?._id) {
-      dispatch(fetchRelated(product._id));
-      const stored = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-      const updated = [product, ...stored.filter((p: Product) => p._id !== product._id)].slice(0, 4);
-      localStorage.setItem('recentlyViewed', JSON.stringify(updated));
-      setRecentlyViewed(updated);
+    if (!product?._id) return;
 
-      setReviewsLoading(true);
-      reviewService.getProductReviews(product._id, { limit: 10 })
-        .then((res) => setReviews(res.data as Review[]))
-        .catch(() => {})
-        .finally(() => setReviewsLoading(false));
-    }
+    dispatch(fetchRelated(product._id));
+
+    let cancelled = false;
+
+    const syncRecentlyViewed = async () => {
+      try {
+        const stored: Product[] = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+        const history = [
+          product,
+          ...stored.filter((p) => p?._id && p._id !== product._id),
+        ].slice(0, 8);
+
+        const others = history.filter((p) => p._id !== product._id).slice(0, 4);
+        const validated: Product[] = [];
+
+        for (const item of others) {
+          try {
+            const res = await productService.getProduct(item._id);
+            if (res?.data?._id) validated.push(res.data);
+          } catch {
+            // Deleted or old seed product (e.g. Acqua di Gio) — drop it
+          }
+        }
+
+        if (cancelled) return;
+
+        setRecentlyViewed(validated);
+        localStorage.setItem(
+          'recentlyViewed',
+          JSON.stringify([product, ...validated].slice(0, 8))
+        );
+      } catch {
+        if (!cancelled) {
+          localStorage.removeItem('recentlyViewed');
+          setRecentlyViewed([]);
+        }
+      }
+    };
+
+    syncRecentlyViewed();
+
+    setReviewsLoading(true);
+    reviewService
+      .getProductReviews(product._id, { limit: 10 })
+      .then((res) => {
+        if (!cancelled) setReviews(res.data as Review[]);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setReviewsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch, product]);
-
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-    if (stored.length > 0) setRecentlyViewed(stored);
-  }, []);
 
   useEffect(() => {
     if (product) {

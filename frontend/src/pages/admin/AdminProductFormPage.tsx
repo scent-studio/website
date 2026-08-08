@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
@@ -36,10 +36,6 @@ const productSchema = z.object({
   brand: z.string().optional(),
   gender: z.string().min(1, 'Gender is required'),
   stock: z.string().optional(),
-  size: z.string().min(1, 'Size is required'),
-  sizePrice: z.string().min(1, 'Size price is required'),
-  sizeStock: z.string().optional(),
-  sizeSku: z.string().min(1, 'SKU is required'),
   topNotes: z.string().optional(),
   middleNotes: z.string().optional(),
   baseNotes: z.string().optional(),
@@ -62,6 +58,8 @@ const productSchema = z.object({
 
 type ProductForm = z.infer<typeof productSchema>;
 
+type SizeRow = { size: string; price: string; stock: string; sku: string };
+
 function parseList(value?: string): string[] {
   if (!value?.trim()) return [];
   return value.split(',').map((s) => s.trim()).filter(Boolean);
@@ -72,6 +70,8 @@ function idOf(ref: Category | string | undefined): string {
   return typeof ref === 'object' ? ref._id : ref;
 }
 
+const emptySize = (): SizeRow => ({ size: '50ml', price: '', stock: '0', sku: '' });
+
 export default function AdminProductFormPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -80,6 +80,11 @@ export default function AdminProductFormPage() {
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [sizeRows, setSizeRows] = useState<SizeRow[]>([
+    { size: '50ml', price: '', stock: '0', sku: '' },
+    { size: '100ml', price: '', stock: '0', sku: '' },
+  ]);
+  const [sizeError, setSizeError] = useState('');
 
   const {
     register,
@@ -91,10 +96,6 @@ export default function AdminProductFormPage() {
     defaultValues: {
       originalPrice: '',
       stock: '0',
-      size: '50ml',
-      sizePrice: '',
-      sizeStock: '0',
-      sizeSku: '',
       isFeatured: 'false',
       isTrending: 'false',
       isBestSeller: 'false',
@@ -117,7 +118,6 @@ export default function AdminProductFormPage() {
         .getProduct(id)
         .then((res) => {
           const p = res.data;
-          const primarySize = p.sizes?.[0];
           reset({
             name: p.name,
             description: p.description,
@@ -127,10 +127,6 @@ export default function AdminProductFormPage() {
             category: idOf(p.category),
             gender: p.gender || '',
             stock: String(p.stock ?? p.stockQuantity ?? 0),
-            size: primarySize?.size || '50ml',
-            sizePrice: primarySize ? String(primarySize.price) : String(p.price ?? ''),
-            sizeStock: primarySize ? String(primarySize.stock) : String(p.stock ?? 0),
-            sizeSku: primarySize?.sku || '',
             topNotes: p.topNotes?.join(', ') || '',
             middleNotes: p.middleNotes?.join(', ') || '',
             baseNotes: p.baseNotes?.join(', ') || '',
@@ -150,6 +146,16 @@ export default function AdminProductFormPage() {
             metaTitle: p.metaTitle || '',
             metaDescription: p.metaDescription || '',
           });
+          if (p.sizes?.length) {
+            setSizeRows(
+              p.sizes.map((s) => ({
+                size: s.size || '',
+                price: String(s.price ?? ''),
+                stock: String(s.stock ?? 0),
+                sku: s.sku || '',
+              }))
+            );
+          }
           setImageUrls(p.images || []);
         })
         .catch(() => toast.error('Failed to load product'))
@@ -157,16 +163,43 @@ export default function AdminProductFormPage() {
     }
   }, [id, isEdit, reset]);
 
+  const updateSizeRow = (index: number, field: keyof SizeRow, value: string) => {
+    setSizeRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+  };
+
+  const addSizeRow = () => {
+    setSizeRows((prev) => [...prev, emptySize()]);
+  };
+
+  const removeSizeRow = (index: number) => {
+    setSizeRows((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)));
+  };
+
   const onSubmit = async (data: ProductForm) => {
+    const validSizes = sizeRows
+      .map((row) => ({
+        size: row.size.trim(),
+        price: parseFloat(row.price),
+        stock: row.stock ? parseInt(row.stock, 10) : 0,
+        sku: row.sku.trim(),
+      }))
+      .filter((s) => s.size && s.sku && !Number.isNaN(s.price) && s.price > 0);
+
+    if (!validSizes.length) {
+      setSizeError('Add at least one size with size, price, and SKU (e.g. 50ml and 100ml)');
+      return;
+    }
+    setSizeError('');
+
     setSubmitting(true);
     try {
       const sellingPrice = parseFloat(data.price);
       const originalPrice = data.originalPrice ? parseFloat(data.originalPrice) : 0;
       const mrp = originalPrice > sellingPrice ? originalPrice : sellingPrice;
       const discount = mrp > sellingPrice ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
-      const sizePrice = parseFloat(data.sizePrice);
-      const sizeStock = data.sizeStock ? parseInt(data.sizeStock, 10) : 0;
-      const stock = data.stock ? parseInt(data.stock, 10) : sizeStock;
+      const stock = data.stock
+        ? parseInt(data.stock, 10)
+        : validSizes.reduce((sum, s) => sum + (s.stock || 0), 0);
 
       const payload = {
         name: data.name,
@@ -179,14 +212,7 @@ export default function AdminProductFormPage() {
         gender: data.gender as Gender,
         stock,
         images: imageUrls,
-        sizes: [
-          {
-            size: data.size,
-            price: sizePrice,
-            stock: sizeStock,
-            sku: data.sizeSku,
-          },
-        ],
+        sizes: validSizes,
         topNotes: parseList(data.topNotes),
         middleNotes: parseList(data.middleNotes),
         baseNotes: parseList(data.baseNotes),
@@ -322,36 +348,64 @@ export default function AdminProductFormPage() {
         </div>
 
         <div className="bg-luxury-white border border-luxury-border rounded-xl p-6 space-y-5 shadow-sm">
-          <h3 className="text-sm font-serif text-luxury-gold tracking-wider uppercase">
-            Size & SKU
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Input
-              label="Size"
-              placeholder="50ml"
-              error={errors.size?.message}
-              {...register('size')}
-            />
-            <Input
-              label="Size Price (PKR)"
-              type="number"
-              step="0.01"
-              error={errors.sizePrice?.message}
-              {...register('sizePrice')}
-            />
-            <Input
-              label="Size Stock"
-              type="number"
-              min="0"
-              {...register('sizeStock')}
-            />
-            <Input
-              label="SKU"
-              placeholder="SKU-001"
-              error={errors.sizeSku?.message}
-              {...register('sizeSku')}
-            />
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-serif text-luxury-gold tracking-wider uppercase">
+              Sizes & Prices
+            </h3>
+            <button
+              type="button"
+              onClick={addSizeRow}
+              className="inline-flex items-center gap-1.5 text-xs text-luxury-gold-dark hover:text-luxury-charcoal transition-colors"
+            >
+              <Plus size={14} /> Add size
+            </button>
           </div>
+          <p className="text-xs text-luxury-steel">
+            Add each bottle size with its own price (e.g. 50ml and 100ml). Leave a row blank to skip it.
+          </p>
+          <div className="space-y-4">
+            {sizeRows.map((row, index) => (
+              <div key={index} className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+                <Input
+                  label="Size"
+                  placeholder="100ml"
+                  value={row.size}
+                  onChange={(e) => updateSizeRow(index, 'size', e.target.value)}
+                />
+                <Input
+                  label="Price (PKR)"
+                  type="number"
+                  step="0.01"
+                  placeholder="2999"
+                  value={row.price}
+                  onChange={(e) => updateSizeRow(index, 'price', e.target.value)}
+                />
+                <Input
+                  label="Stock"
+                  type="number"
+                  min="0"
+                  value={row.stock}
+                  onChange={(e) => updateSizeRow(index, 'stock', e.target.value)}
+                />
+                <Input
+                  label="SKU"
+                  placeholder={`SKU-${index + 1}`}
+                  value={row.sku}
+                  onChange={(e) => updateSizeRow(index, 'sku', e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSizeRow(index)}
+                  disabled={sizeRows.length <= 1}
+                  className="mb-1 h-11 w-11 flex items-center justify-center border border-luxury-border rounded-lg text-luxury-steel hover:text-red-600 hover:border-red-300 disabled:opacity-30"
+                  aria-label="Remove size"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+          {sizeError && <p className="text-xs text-red-600">{sizeError}</p>}
         </div>
 
         <div className="bg-luxury-white border border-luxury-border rounded-xl p-6 space-y-5 shadow-sm">

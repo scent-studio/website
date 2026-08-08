@@ -11,7 +11,7 @@ const createContactRules = [
     .isEmail().withMessage('Please provide a valid email')
     .normalizeEmail(),
   body('phone')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim(),
   body('subject')
     .trim()
@@ -20,7 +20,7 @@ const createContactRules = [
   body('message')
     .trim()
     .notEmpty().withMessage('Message is required')
-    .isLength({ max: 5000 }).withMessage('Message cannot exceed 5000 characters'),
+    .isLength({ min: 10, max: 5000 }).withMessage('Message must be between 10 and 5000 characters'),
 ];
 
 const replyContactRules = [

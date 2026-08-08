@@ -30,13 +30,12 @@ export default function HowToPickSection({ className }: HowToPickSectionProps) {
             className="order-2 lg:order-1"
           >
             <p className="text-base md:text-lg text-luxury-charcoal/80 font-sans leading-relaxed">
-              Start by identifying what kind of scents you enjoy. Fresh, floral, woody,
-              sweet, or spicy. Then look at what inspired each fragrance. If you have
-              smelled the original and liked it, our version is a reliable starting
-              point. Reading our customer reviews also helps.
+            Scent Studio 5ml Testers
+
+Experience our premium fragrances in a convenient 5ml size before choosing your favorite. Crafted with the same high-quality fragrance oils as our full-size perfumes, these testers offer long-lasting performance in a compact, travel-friendly bottle. Perfect for discovering your signature scent or carrying it wherever you go.
             </p>
 
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -50,7 +49,7 @@ export default function HowToPickSection({ className }: HowToPickSectionProps) {
                 Try Our Tester Box
                 <ArrowRight size={16} />
               </Link>
-            </motion.div>
+            </motion.div> */}
           </motion.div>
 
           <motion.div
@@ -62,7 +61,7 @@ export default function HowToPickSection({ className }: HowToPickSectionProps) {
           >
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-luxury-border bg-luxury-ivory shadow-card">
               <img
-                src="/uploads/categories/oudh-royale.png"
+                src="/uploads/categories/tester.jpeg"
                 alt="Curated perfume tester box"
                 className="absolute inset-0 w-full h-full object-cover"
               />

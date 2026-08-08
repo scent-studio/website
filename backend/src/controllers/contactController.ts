@@ -2,7 +2,8 @@ const ContactMessage = require('../models/ContactMessage');
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
-const { sendContactReplyEmail } = require('../utils/sendEmail');
+const { sendContactReplyEmail, sendEmail } = require('../utils/sendEmail');
+const env = require('../config/env');
 
 const submitContact = asyncHandler(async (req: any, res: any) => {
   const { name, email, phone, subject, message } = req.body;
@@ -10,12 +11,35 @@ const submitContact = asyncHandler(async (req: any, res: any) => {
   const contactMessage = await ContactMessage.create({
     name,
     email,
-    phone,
+    phone: phone || '',
     subject,
     message,
   });
 
-  res.status(201).json(ApiResponse.message('Your message has been received. We will get back to you shortly.'));
+  // Notify store inbox (non-blocking)
+  const notifyTo = env.SMTP_FROM_EMAIL || env.SMTP_USER;
+  if (notifyTo) {
+    sendEmail({
+      to: notifyTo,
+      subject: `New contact message: ${subject}`,
+      text: `From: ${name} <${email}>\nPhone: ${phone || '—'}\n\n${message}`,
+      html: `
+        <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:20px;color:#2c2c2c;">
+          <h2 style="margin:0 0 12px;font-weight:normal;">New contact message</h2>
+          <p><strong>From:</strong> ${name} &lt;${email}&gt;</p>
+          <p><strong>Phone:</strong> ${phone || '—'}</p>
+          <p><strong>Subject:</strong> ${subject}</p>
+          <p style="white-space:pre-wrap;line-height:1.6;border-top:1px solid #eee;padding-top:12px;">${message}</p>
+        </div>
+      `,
+    }).catch((err: any) => {
+      console.warn('Contact notification email failed:', err?.message || err);
+    });
+  }
+
+  res.status(201).json(
+    ApiResponse.created(contactMessage, 'Your message has been received. We will get back to you shortly.')
+  );
 });
 
 const getAllMessages = asyncHandler(async (req: any, res: any) => {
@@ -54,6 +78,20 @@ const getMessage = asyncHandler(async (req: any, res: any) => {
   res.status(200).json(ApiResponse.success(message));
 });
 
+const markAsRead = asyncHandler(async (req: any, res: any) => {
+  const message = await ContactMessage.findByIdAndUpdate(
+    req.params.id,
+    { isRead: true },
+    { new: true }
+  );
+
+  if (!message) {
+    throw ApiError.notFound('Message not found');
+  }
+
+  res.status(200).json(ApiResponse.updated(message));
+});
+
 const replyToMessage = asyncHandler(async (req: any, res: any) => {
   const { reply } = req.body;
 
@@ -87,6 +125,7 @@ module.exports = {
   submitContact,
   getAllMessages,
   getMessage,
+  markAsRead,
   replyToMessage,
   deleteMessage,
 };

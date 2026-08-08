@@ -120,7 +120,7 @@ export default function AboutPage() {
                 </p>
               </div>
             </ScrollReveal>
-
+{/* 
             <ScrollReveal variant="slideInRight" delay={0.12}>
               <div className="relative max-w-md mx-auto lg:max-w-none">
                 <div className="absolute -top-4 -left-4 w-24 h-24 border border-luxury-gold/25 rounded-2xl pointer-events-none" />
@@ -134,7 +134,7 @@ export default function AboutPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-luxury-ink/35 via-transparent to-transparent" />
                 </div>
               </div>
-            </ScrollReveal>
+            </ScrollReveal> */}
           </div>
         </div>
       </section>

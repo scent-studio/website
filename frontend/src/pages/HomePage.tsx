@@ -92,7 +92,8 @@ export default function HomePage() {
           title="New Arrivals of 100ML"
           subtitle="Full-size bottles, freshly landed"
           products={newArrivals100}
-          viewAllLink="/shop?sort=newest"
+          preferredSize="100ml"
+          viewAllLink="/shop?sort=newest&size=100ml"
         />
       )}
 

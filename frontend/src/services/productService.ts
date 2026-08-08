@@ -88,6 +88,13 @@ export const productService = {
     return response.data;
   },
 
+  async search(q: string, limit = 8) {
+    const response = await api.get<PaginatedResponse<Product>>('/products/search', {
+      params: { q, limit },
+    });
+    return response.data;
+  },
+
   async createProduct(data: FormData | Partial<Product>) {
     const response = await api.post<ApiResponse<Product>>('/products', data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : undefined,

@@ -20,7 +20,7 @@ export default function AdminMessagesPage() {
   const fetchData = useCallback(() => {
     setLoading(true);
     contactService.getAll()
-      .then((res) => setMessages(res.data))
+      .then((res) => setMessages(Array.isArray(res.data) ? res.data : []))
       .catch(() => toast.error('Failed to load messages'))
       .finally(() => setLoading(false));
   }, []);

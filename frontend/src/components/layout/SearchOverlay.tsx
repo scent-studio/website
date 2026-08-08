@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, X, Clock, TrendingUp, ArrowRight, Sparkles, Command,
+  Search, X, Clock, TrendingUp, ArrowRight, Sparkles, Command, Loader2,
 } from 'lucide-react';
-
-const recentSearches = ['oud perfumes', 'rose fragrance', 'gift sets', 'unisex'];
+import { productService } from '../../services/productService';
+import { formatPrice, getDisplayPrice } from '../../lib/utils';
+import type { Product } from '../../types';
 
 const quickFilters = [
   { label: 'New Arrivals', path: '/new-arrivals' },
@@ -15,32 +16,25 @@ const quickFilters = [
   { label: 'Gift Sets', path: '/shop?giftSet=true' },
 ];
 
-const suggestions = [
-  {
-    name: 'Midnight Oud',
-    price: 'Rs. 37,000',
-    note: 'Woody · Amber',
-    image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    name: 'Rose Velvet',
-    price: 'Rs. 49,000',
-    note: 'Floral · Soft',
-    image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    name: 'Amber Nights',
-    price: 'Rs. 33,000',
-    note: 'Oriental · Warm',
-    image: 'https://images.unsplash.com/photo-1594035910387-fea477942556?auto=format&fit=crop&w=240&q=80',
-  },
-  {
-    name: 'Citrus Breeze',
-    price: 'Rs. 25,000',
-    note: 'Fresh · Citrus',
-    image: 'https://images.unsplash.com/photo-1587017539504-67cfbddac569?auto=format&fit=crop&w=240&q=80',
-  },
-];
+const RECENT_KEY = 'scent-studio-recent-searches';
+
+const getRecentSearches = (): string[] => {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, 6) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveRecentSearch = (term: string) => {
+  const q = term.trim();
+  if (!q) return;
+  const next = [q, ...getRecentSearches().filter((t) => t.toLowerCase() !== q.toLowerCase())].slice(0, 6);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+};
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -51,25 +45,25 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Product[]>([]);
+  const [popular, setPopular] = useState<Product[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-
-  const filteredSuggestions = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return suggestions;
-    return suggestions.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.note.toLowerCase().includes(q)
-    );
-  }, [query]);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 120);
+      setRecentSearches(getRecentSearches());
       document.body.style.overflow = 'hidden';
+      productService
+        .getBestSellers()
+        .then((res) => setPopular((res.data || []).slice(0, 4)))
+        .catch(() => setPopular([]));
     } else {
       setQuery('');
+      setResults([]);
       document.body.style.overflow = '';
     }
     return () => {
@@ -86,11 +80,101 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onClose]);
 
-  const submitSearch = () => {
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await productService.search(q, 8);
+        if (!cancelled) setResults(res.data || []);
+      } catch {
+        if (!cancelled) setResults([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
+  const submitSearch = useCallback(() => {
     const q = query.trim();
     if (!q) return;
+    saveRecentSearch(q);
     onClose();
     navigate(`/shop?search=${encodeURIComponent(q)}`);
+  }, [query, onClose, navigate]);
+
+  const ProductRow = ({ product, compact = false }: { product: Product; compact?: boolean }) => {
+    const { price } = getDisplayPrice(product);
+    const brandName =
+      product.brand && typeof product.brand === 'object' ? (product.brand as any).name : '';
+    const image = product.images?.[0] || '';
+
+    return (
+      <Link
+        to={`/product/${product.slug}`}
+        onClick={() => {
+          if (query.trim()) saveRecentSearch(query.trim());
+          onClose();
+        }}
+        className={
+          compact
+            ? 'group block overflow-hidden rounded-xl border border-luxury-border bg-luxury-ivory/30 hover:border-luxury-gold/35 hover:shadow-card transition-all duration-300'
+            : 'group flex items-center gap-3 rounded-xl border border-transparent p-2 hover:border-luxury-border hover:bg-luxury-ivory/70 transition-all'
+        }
+      >
+        {compact ? (
+          <>
+            <div className="aspect-[4/5] overflow-hidden bg-luxury-ivory">
+              {image ? (
+                <img src={image} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              ) : (
+                <div className="h-full w-full bg-luxury-border/40" />
+              )}
+            </div>
+            <div className="p-3">
+              <p className="truncate text-sm font-medium text-luxury-charcoal group-hover:text-luxury-gold-dark transition-colors">
+                {product.name}
+              </p>
+              {brandName && <p className="mt-0.5 text-[11px] text-luxury-steel">{brandName}</p>}
+              <p className="mt-1.5 font-serif text-xs text-luxury-gold-dark">{formatPrice(price)}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-luxury-ivory">
+              {image ? (
+                <img src={image} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+              ) : (
+                <div className="h-full w-full bg-luxury-border/40" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-luxury-charcoal group-hover:text-luxury-gold-dark transition-colors">
+                {product.name}
+              </p>
+              {brandName && <p className="mt-0.5 text-[11px] text-luxury-steel">{brandName}</p>}
+              <p className="mt-1 font-serif text-xs text-luxury-gold-dark">{formatPrice(price)}</p>
+            </div>
+            <ArrowRight
+              size={14}
+              className="shrink-0 text-luxury-border opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-luxury-gold"
+            />
+          </>
+        )}
+      </Link>
+    );
   };
 
   return (
@@ -123,7 +207,6 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             transition={{ duration: 0.35, ease }}
             className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-luxury-border/80 bg-luxury-white shadow-[0_24px_80px_rgba(28,28,28,0.22)]"
           >
-            {/* Search field */}
             <div className="relative border-b border-luxury-border/80">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-luxury-gold/50 to-transparent" />
               <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
@@ -139,7 +222,8 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                   placeholder="Search fragrances, notes, collections..."
                   className="min-w-0 flex-1 bg-transparent text-base sm:text-lg text-luxury-charcoal placeholder:text-luxury-steel/45 outline-none font-sans"
                 />
-                {query && (
+                {loading && <Loader2 size={16} className="animate-spin text-luxury-steel" />}
+                {query && !loading && (
                   <button
                     type="button"
                     onClick={() => setQuery('')}
@@ -170,7 +254,6 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             <div className="max-h-[min(62vh,520px)] overflow-y-auto overscroll-contain">
               {!query && (
                 <div className="p-4 sm:p-5 space-y-6">
-                  {/* Quick filters */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -196,90 +279,69 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     </div>
                   </motion.div>
 
-                  {/* Recent */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.35 }}
-                  >
-                    <div className="mb-3 flex items-center gap-2">
-                      <Clock size={13} className="text-luxury-steel" />
-                      <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-luxury-steel">
-                        Recent searches
-                      </h3>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {recentSearches.map((term) => (
-                        <button
-                          key={term}
-                          type="button"
-                          onClick={() => setQuery(term)}
-                          className="group inline-flex items-center gap-2 rounded-xl border border-luxury-border/80 bg-luxury-white px-3 py-2 text-sm text-luxury-charcoal/70 hover:border-luxury-gold/35 hover:text-luxury-charcoal transition-all"
-                        >
-                          <Search size={12} className="text-luxury-steel/50 group-hover:text-luxury-gold transition-colors" />
-                          {term}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-
-                  {/* Popular */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15, duration: 0.35 }}
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp size={13} className="text-luxury-gold" />
+                  {recentSearches.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1, duration: 0.35 }}
+                    >
+                      <div className="mb-3 flex items-center gap-2">
+                        <Clock size={13} className="text-luxury-steel" />
                         <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-luxury-steel">
-                          Popular right now
+                          Recent searches
                         </h3>
                       </div>
-                      <Link
-                        to="/best-sellers"
-                        onClick={onClose}
-                        className="inline-flex items-center gap-1 text-[11px] text-luxury-gold-dark hover:text-luxury-charcoal transition-colors"
-                      >
-                        View all <ArrowRight size={12} />
-                      </Link>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {suggestions.map((product, idx) => (
-                        <motion.div
-                          key={product.name}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.18 + idx * 0.05, duration: 0.35 }}
-                        >
-                          <Link
-                            to="/shop"
-                            onClick={onClose}
-                            className="group flex items-center gap-3 rounded-xl border border-transparent p-2 hover:border-luxury-border hover:bg-luxury-ivory/70 transition-all"
+                      <div className="flex flex-wrap gap-2">
+                        {recentSearches.map((term) => (
+                          <button
+                            key={term}
+                            type="button"
+                            onClick={() => setQuery(term)}
+                            className="group inline-flex items-center gap-2 rounded-xl border border-luxury-border/80 bg-luxury-white px-3 py-2 text-sm text-luxury-charcoal/70 hover:border-luxury-gold/35 hover:text-luxury-charcoal transition-all"
                           >
-                            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-luxury-ivory">
-                              <img
-                                src={product.image}
-                                alt={product.name}
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium text-luxury-charcoal group-hover:text-luxury-gold-dark transition-colors">
-                                {product.name}
-                              </p>
-                              <p className="mt-0.5 text-[11px] text-luxury-steel">{product.note}</p>
-                              <p className="mt-1 font-serif text-xs text-luxury-gold-dark">{product.price}</p>
-                            </div>
-                            <ArrowRight
-                              size={14}
-                              className="shrink-0 text-luxury-border opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-luxury-gold"
-                            />
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </motion.div>
+                            <Search size={12} className="text-luxury-steel/50 group-hover:text-luxury-gold transition-colors" />
+                            {term}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {popular.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15, duration: 0.35 }}
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp size={13} className="text-luxury-gold" />
+                          <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-luxury-steel">
+                            Popular right now
+                          </h3>
+                        </div>
+                        <Link
+                          to="/best-sellers"
+                          onClick={onClose}
+                          className="inline-flex items-center gap-1 text-[11px] text-luxury-gold-dark hover:text-luxury-charcoal transition-colors"
+                        >
+                          View all <ArrowRight size={12} />
+                        </Link>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {popular.map((product, idx) => (
+                          <motion.div
+                            key={product._id}
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.18 + idx * 0.05, duration: 0.35 }}
+                          >
+                            <ProductRow product={product} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               )}
 
@@ -287,7 +349,9 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                 <div className="p-4 sm:p-5 space-y-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm text-luxury-steel">
-                      {filteredSuggestions.length > 0 ? (
+                      {loading ? (
+                        'Searching...'
+                      ) : results.length > 0 ? (
                         <>
                           Results for{' '}
                           <span className="font-medium text-luxury-charcoal">&ldquo;{query}&rdquo;</span>
@@ -308,39 +372,20 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                     </button>
                   </div>
 
-                  {filteredSuggestions.length > 0 ? (
+                  {results.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3">
-                      {filteredSuggestions.map((product, idx) => (
+                      {results.map((product, idx) => (
                         <motion.div
-                          key={product.name}
+                          key={product._id}
                           initial={{ opacity: 0, y: 14 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.05, duration: 0.3 }}
                         >
-                          <Link
-                            to={`/shop?search=${encodeURIComponent(query.trim())}`}
-                            onClick={onClose}
-                            className="group block overflow-hidden rounded-xl border border-luxury-border bg-luxury-ivory/30 hover:border-luxury-gold/35 hover:shadow-card transition-all duration-300"
-                          >
-                            <div className="aspect-[4/5] overflow-hidden bg-luxury-ivory">
-                              <img
-                                src={product.image}
-                                alt={product.name}
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
-                            </div>
-                            <div className="p-3">
-                              <p className="truncate text-sm font-medium text-luxury-charcoal group-hover:text-luxury-gold-dark transition-colors">
-                                {product.name}
-                              </p>
-                              <p className="mt-0.5 text-[11px] text-luxury-steel">{product.note}</p>
-                              <p className="mt-1.5 font-serif text-xs text-luxury-gold-dark">{product.price}</p>
-                            </div>
-                          </Link>
+                          <ProductRow product={product} compact />
                         </motion.div>
                       ))}
                     </div>
-                  ) : (
+                  ) : !loading ? (
                     <div className="rounded-xl border border-dashed border-luxury-border bg-luxury-ivory/40 px-6 py-10 text-center">
                       <Search size={22} className="mx-auto mb-3 text-luxury-steel/40" />
                       <p className="text-sm text-luxury-charcoal mb-1">Nothing matched that search</p>
@@ -353,12 +398,11 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                         Search shop for &ldquo;{query}&rdquo; <ArrowRight size={14} />
                       </button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
 
-            {/* Footer hint */}
             <div className="flex items-center justify-between border-t border-luxury-border/80 bg-luxury-ivory/50 px-4 py-2.5 sm:px-5">
               <p className="flex items-center gap-1.5 text-[11px] text-luxury-steel">
                 <Command size={11} />

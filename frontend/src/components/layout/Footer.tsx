@@ -25,15 +25,15 @@ const quickLinks = [
   { label: 'Shop All', path: '/shop' },
   { label: 'New Arrivals', path: '/new-arrivals' },
   { label: 'Best Sellers', path: '/best-sellers' },
-  { label: 'Women', path: '/shop?gender=women' },
-  { label: 'Men', path: '/shop?gender=men' },
-  { label: 'Gift Sets', path: '/shop?category=gift-sets' },
+  { label: 'Women', path: '/shop?gender=female' },
+  { label: 'Men', path: '/shop?gender=male' },
+  { label: 'Gift Sets', path: '/shop?isGiftSet=true' },
 ];
 
 const customerLinks = [
-  { label: 'Shipping Information', path: '/shipping' },
-  { label: 'Returns & Exchanges', path: '/returns' },
-  { label: 'Privacy Policy', path: '/privacy' },
+  { label: 'Shipping Information', path: '/shipping-policy' },
+  { label: 'Returns & Exchanges', path: '/return-policy' },
+  { label: 'Privacy Policy', path: '/privacy-policy' },
   { label: 'Terms of Service', path: '/terms' },
   { label: 'FAQ', path: '/faq' },
   { label: 'Contact Us', path: '/contact' },
@@ -41,16 +41,14 @@ const customerLinks = [
 
 const companyLinks = [
   { label: 'About Us', path: '/about' },
-  { label: 'Our Story', path: '/our-story' },
-  { label: 'Craftsmanship', path: '/craftsmanship' },
-  { label: 'Careers', path: '/careers' },
-  { label: 'Press', path: '/press' },
+  { label: 'Contact', path: '/contact' },
+  { label: 'FAQ', path: '/faq' },
 ];
 
 const socialLinks = [
-  { icon: Instagram, href: 'https://www.instagram.com/scentstudio6/', label: 'Instagram' },
-  { icon: Facebook, href: 'https://www.facebook.com/scentstudio/', label: 'Facebook' },
-  { icon: TikTokIcon, href: 'https://www.tiktok.com/@scentstudio40', label: 'TikTok' },
+  { icon: Instagram, href: 'https://www.instagram.com/scentstudio_pk', label: 'Instagram' },
+  { icon: Facebook, href: 'https://www.facebook.com/share/1Gd6oAvbwz/', label: 'Facebook' },
+  { icon: TikTokIcon, href: 'https://www.tiktok.com/@scentstudio_pk', label: 'TikTok' },
   { icon: WhatsAppIcon, href: 'https://wa.me/+923208348754', label: 'WhatsApp' },
 ];
 
@@ -144,9 +142,9 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} Scent Studio. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <Link to="/privacy" className="text-xs text-luxury-steel hover:text-luxury-charcoal transition-colors">Privacy</Link>
+            <Link to="/privacy-policy" className="text-xs text-luxury-steel hover:text-luxury-charcoal transition-colors">Privacy</Link>
             <Link to="/terms" className="text-xs text-luxury-steel hover:text-luxury-charcoal transition-colors">Terms</Link>
-            <Link to="/sitemap" className="text-xs text-luxury-steel hover:text-luxury-charcoal transition-colors">Sitemap</Link>
+            <Link to="/shipping-policy" className="text-xs text-luxury-steel hover:text-luxury-charcoal transition-colors">Shipping</Link>
           </div>
         </div>
       </div>

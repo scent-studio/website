@@ -168,9 +168,13 @@ function AppContent() {
         <Route path="/contact" element={<Layout><PageTransition><ContactPage /></PageTransition></Layout>} />
         <Route path="/faq" element={<Layout><PageTransition><FAQPage /></PageTransition></Layout>} />
         <Route path="/privacy-policy" element={<Layout><PageTransition><PrivacyPolicyPage /></PageTransition></Layout>} />
+        <Route path="/privacy" element={<Layout><PageTransition><PrivacyPolicyPage /></PageTransition></Layout>} />
         <Route path="/terms" element={<Layout><PageTransition><TermsPage /></PageTransition></Layout>} />
         <Route path="/shipping-policy" element={<Layout><PageTransition><ShippingPolicyPage /></PageTransition></Layout>} />
+        <Route path="/shipping" element={<Layout><PageTransition><ShippingPolicyPage /></PageTransition></Layout>} />
         <Route path="/return-policy" element={<Layout><PageTransition><ReturnPolicyPage /></PageTransition></Layout>} />
+        <Route path="/returns" element={<Layout><PageTransition><ReturnPolicyPage /></PageTransition></Layout>} />
+        <Route path="/returns-exchanges" element={<Layout><PageTransition><ReturnPolicyPage /></PageTransition></Layout>} />
         <Route path="/blog" element={<Layout><PageTransition><BlogPage /></PageTransition></Layout>} />
         <Route path="/blog/:slug" element={<Layout><PageTransition><BlogDetailPage /></PageTransition></Layout>} />
         <Route path="/account" element={<ProtectedRoute><UserDashboardLayout><PageTransition><UserDashboardHome /></PageTransition></UserDashboardLayout></ProtectedRoute>} />

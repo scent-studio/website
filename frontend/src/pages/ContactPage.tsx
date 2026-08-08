@@ -13,11 +13,11 @@ import { contactService } from '../services/contactService';
 import toast from 'react-hot-toast';
 
 const contactSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email'),
   phone: z.string().optional(),
   subject: z.string().min(1, 'Subject is required'),
-  message: z.string().min(1, 'Message is required').min(10, 'Message must be at least 10 characters'),
+  message: z.string().min(10, 'Message must be at least 10 characters'),
 });
 
 type ContactForm = z.infer<typeof contactSchema>;
@@ -75,10 +75,10 @@ export default function ContactPage() {
                     <Input label="Name" placeholder="Your name" error={errors.name?.message} {...register('name')} />
                     <Input label="Email" type="email" placeholder="your@email.com" error={errors.email?.message} {...register('email')} />
                   </div>
-                  <Input label="Phone (optional)" type="tel" placeholder="+1 (555) 123-4567" error={errors.phone?.message} {...register('phone')} />
+                  <Input label="Phone (optional)" type="tel" placeholder="+92 300 1234567" error={errors.phone?.message} {...register('phone')} />
                   <Input label="Subject" placeholder="How can we help?" error={errors.subject?.message} {...register('subject')} />
                   <Textarea label="Message" placeholder="Tell us more..." error={errors.message?.message} {...register('message')} showCount maxLength={1000} />
-                  <Button type="submit" variant="primary" size="lg" isLoading={submitting}>
+                  <Button type="submit" variant="primary" size="lg" className="w-full sm:w-auto" isLoading={submitting} disabled={submitting}>
                     <Send size={16} /> Send Message
                   </Button>
                 </form>

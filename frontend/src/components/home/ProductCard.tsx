@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { cn, formatPrice, getDisplayPrice } from '../../lib/utils';
+import { cn, formatPrice, getDisplayPrice, findProductSize } from '../../lib/utils';
 import { addToLocalCart } from '../../lib/cartStorage';
 import {
   addToLocalWishlist,
@@ -37,17 +37,23 @@ interface ProductCardProps {
     sizes?: { size: string; price: number; stock: number; sku: string }[];
   };
   index?: number;
+  /** Prefer this size for displayed price (e.g. "100ml") */
+  preferredSize?: string;
 }
 
-export default function ProductCard({ product, index = 0 }: ProductCardProps) {
+export default function ProductCard({ product, index = 0, preferredSize }: ProductCardProps) {
   const dispatch = useDispatch<AppDispatch>();
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const [isWishlisted, setIsWishlisted] = useState(() => isInLocalWishlist(product._id));
   const [isHovered, setIsHovered] = useState(false);
-  const { price, original, hasDiscount, percent } = getDisplayPrice(product as Product);
+  const { price, original, hasDiscount, percent, sizeLabel } = getDisplayPrice(
+    product as Product,
+    preferredSize
+  );
   const brandName = product.brand && typeof product.brand === 'object' ? (product.brand as any)?.name : product.brand;
   const reviews = (product as Product).numReviews ?? (product as any).reviewCount ?? 0;
   const image = product.images?.[0] || 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" fill="%23f0ebe3"><rect width="300" height="400"/><text x="150" y="200" text-anchor="middle" fill="%23b8a88a" font-size="16" font-family="serif">No Image</text></svg>');
+  const matchedSize = findProductSize((product as Product).sizes, preferredSize);
 
   useEffect(() => {
     const sync = () => setIsWishlisted(isInLocalWishlist(product._id));
@@ -59,7 +65,12 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     const sizes = (product as Product).sizes;
-    const defaultSize = sizes?.[0]?.size || '100ml';
+    const defaultSize =
+      matchedSize?.size ||
+      sizes?.find((s) => /100/i.test(s.size))?.size ||
+      sizes?.[0]?.size ||
+      preferredSize ||
+      '100ml';
     try {
       addToLocalCart(product as Product, 1, defaultSize);
       toast.success('Added to cart');
@@ -184,7 +195,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           <Rating value={product.rating} size="sm" />
           <span className="text-xs text-luxury-steel">({reviews})</span>
         </div>
-        <div className="mt-2 flex items-baseline gap-2">
+        <div className="mt-2 flex items-baseline gap-2 flex-wrap">
           <span className="text-base font-medium text-luxury-charcoal">
             {formatPrice(price)}
           </span>
@@ -192,6 +203,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             <span className="text-sm text-luxury-steel/70 line-through">
               {formatPrice(original)}
             </span>
+          )}
+          {(sizeLabel || matchedSize?.size) && (
+            <span className="text-[11px] text-luxury-steel">/ {sizeLabel || matchedSize?.size}</span>
           )}
         </div>
       </div>

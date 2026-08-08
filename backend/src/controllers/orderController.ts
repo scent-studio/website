@@ -104,10 +104,13 @@ const createOrder = asyncHandler(async (req: any, res: any) => {
     await product.save();
   }
 
-  const confirmationEmail = isGuest ? guestInfo.email : req.user.email;
-  sendOrderConfirmationEmail(confirmationEmail, order).catch(() => {
-    console.warn('Order confirmation email could not be sent');
-  });
+  const confirmationEmail =
+    (isGuest ? guestInfo?.email : req.user?.email) || guestInfo?.email || undefined;
+  if (confirmationEmail) {
+    sendOrderConfirmationEmail(confirmationEmail, order).catch((err: any) => {
+      console.warn('Order confirmation email could not be sent:', err?.message || err);
+    });
+  }
 
   const populatedOrder = await Order.findById(order._id)
     .populate('orderItems.product', 'name images price')

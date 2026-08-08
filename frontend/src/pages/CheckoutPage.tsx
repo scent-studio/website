@@ -28,7 +28,7 @@ import type { LocalCartItem, PaymentMethod, Product } from '../types';
 import toast from 'react-hot-toast';
 
 const checkoutSchema = z.object({
-  email: z.string().optional().refine((val) => !val || z.string().email().safeParse(val).success, { message: 'Invalid email' }),
+  email: z.string().min(1, 'Email is required for order confirmation').email('Invalid email'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phone: z.string().min(1, 'Phone is required'),
@@ -183,7 +183,7 @@ export default function CheckoutPage() {
           : {
               guestInfo: {
                 name: `${data.firstName} ${data.lastName}`.trim(),
-                ...(data.email ? { email: data.email } : {}),
+                email: data.email,
                 phone: data.phone,
               },
             }),
@@ -248,7 +248,7 @@ export default function CheckoutPage() {
                   <Input label="Last Name" placeholder="Khan" error={errors.lastName?.message} {...register('lastName')} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
+                  <Input label="Email (for order confirmation)" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
                   <Input label="Phone" type="tel" placeholder="+92 300 1234567" error={errors.phone?.message} {...register('phone')} />
                 </div>
                 <div>
