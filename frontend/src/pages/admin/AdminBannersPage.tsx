@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Edit2, Trash2, Plus, Eye } from 'lucide-react';
+import { Edit2, Trash2, Plus, Eye, ImagePlus } from 'lucide-react';
 import DataTable from '../../components/admin/DataTable';
 import ConfirmDialog from '../../components/admin/ConfirmDialog';
 import Button from '../../components/ui/Button';
@@ -8,6 +8,7 @@ import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Textarea from '../../components/ui/Textarea';
 import { bannerService } from '../../services/bannerService';
+import { uploadService } from '../../services/uploadService';
 import type { Banner } from '../../types';
 import { formatDate } from '../../lib/utils';
 import toast from 'react-hot-toast';
@@ -19,6 +20,8 @@ export default function AdminBannersPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState<Banner | null>(null);
   const [form, setForm] = useState({ title: '', subtitle: '', description: '', link: '', order: '0', isActive: 'true' });
+  const [image, setImage] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -35,17 +38,37 @@ export default function AdminBannersPage() {
 
   const openCreate = () => {
     setEditing(null);
+    setImage('');
     setForm({ title: '', subtitle: '', description: '', link: '', order: '0', isActive: 'true' });
     setModalOpen(true);
   };
 
   const openEdit = (b: Banner) => {
     setEditing(b);
+    setImage(b.image || '');
     setForm({ title: b.title, subtitle: b.subtitle || '', description: b.description || '', link: b.link || '', order: String(b.order || 0), isActive: b.isActive ? 'true' : 'false' });
     setModalOpen(true);
   };
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return toast.error('Please upload a JPG, PNG or WebP image');
+    if (file.size > 4 * 1024 * 1024) return toast.error('Image is too large. Please keep it under 4 MB');
+    setUploadingImage(true);
+    try {
+      setImage(await uploadService.uploadBanner(file));
+      toast.success('Image uploaded');
+    } catch {
+      toast.error('Image upload failed');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSave = async () => {
+    if (!image) return toast.error('Please upload a banner image');
     if (!form.title.trim()) return toast.error('Title is required');
     setSaving(true);
     try {
@@ -54,6 +77,8 @@ export default function AdminBannersPage() {
         subtitle: form.subtitle,
         description: form.description,
         link: form.link,
+        image,
+        type: 'hero',
         order: parseInt(form.order),
         isActive: form.isActive === 'true',
       } as any;
@@ -121,7 +146,25 @@ export default function AdminBannersPage() {
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Banner' : 'New Banner'}>
         <div className="space-y-4">
-          <Input label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-luxury-charcoal font-sans">Banner Image</label>
+            <label className="relative flex flex-col items-center justify-center overflow-hidden border border-dashed border-luxury-border rounded-lg cursor-pointer hover:border-luxury-gold transition-colors" style={{ aspectRatio: '16/7.5' }}>
+              {image ? (
+                <img src={image} alt="Banner preview" className="absolute inset-0 h-full w-full object-cover" />
+              ) : (
+                <span className="flex flex-col items-center gap-2 text-luxury-steel text-sm">
+                  <ImagePlus size={24} />
+                  Click to upload
+                </span>
+              )}
+              {uploadingImage && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-sm">Uploading...</span>
+              )}
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={handleImageSelect} disabled={uploadingImage} />
+            </label>
+            <p className="text-xs text-luxury-steel">Recommended size 1920 × 900 px (JPG, PNG or WebP, max 4 MB). Text should be part of the image.</p>
+          </div>
+          <Input label="Title (for admin and accessibility)" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           <Input label="Subtitle" value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} />
           <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           <Input label="Link URL" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} placeholder="/shop" />

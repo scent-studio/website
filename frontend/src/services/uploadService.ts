@@ -9,4 +9,13 @@ export const uploadService = {
     });
     return res.data.data.urls;
   },
+
+  uploadBanner: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await api.post('/upload/banner', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data.url;
+  },
 };

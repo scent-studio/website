@@ -13,19 +13,21 @@ const COMPRESSIBLE = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const compressImage = async (
   buffer: Buffer,
-  mimeType: string
+  mimeType: string,
+  maxWidth: number = MAX_WIDTH,
+  quality: number = JPEG_QUALITY
 ): Promise<{ buffer: Buffer; mimeType: string }> => {
   if (!COMPRESSIBLE.has(mimeType)) return { buffer, mimeType };
   try {
     let pipeline = sharp(buffer)
       .rotate()
-      .resize({ width: MAX_WIDTH, withoutEnlargement: true });
+      .resize({ width: maxWidth, withoutEnlargement: true });
 
     const toWebp = mimeType === 'image/png' || mimeType === 'image/webp';
     if (toWebp) {
-      pipeline = pipeline.webp({ quality: JPEG_QUALITY });
+      pipeline = pipeline.webp({ quality });
     } else {
-      pipeline = pipeline.jpeg({ quality: JPEG_QUALITY, mozjpeg: true });
+      pipeline = pipeline.jpeg({ quality, mozjpeg: true });
     }
 
     const result = await pipeline.toBuffer();
@@ -65,5 +67,23 @@ const uploadImages = asyncHandler(async (req: any, res: any) => {
   res.status(200).json(ApiResponse.success({ urls }));
 });
 
-module.exports = { upload, uploadImages };
+// Hero banners need more resolution than product photos (full-width on desktop)
+const BANNER_MAX_WIDTH = 1920;
+const BANNER_QUALITY = 82;
+
+const uploadBanner = asyncHandler(async (req: any, res: any) => {
+  if (!req.file) {
+    throw ApiError.badRequest('No image uploaded');
+  }
+  const { buffer, mimeType } = await compressImage(
+    req.file.buffer,
+    req.file.mimetype,
+    BANNER_MAX_WIDTH,
+    BANNER_QUALITY
+  );
+  const url = `data:${mimeType};base64,${buffer.toString('base64')}`;
+  res.status(200).json(ApiResponse.success({ url }));
+});
+
+module.exports = { upload, uploadImages, uploadBanner };
 export {};

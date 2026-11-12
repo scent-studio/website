@@ -7,8 +7,8 @@ export const bannerService = {
     return response.data;
   },
 
-  async getActive() {
-    const response = await api.get<ApiResponse<Banner[]>>('/banners/active');
+  async getActive(type?: 'hero' | 'promotional' | 'collection') {
+    const response = await api.get<ApiResponse<Banner[]>>('/banners/active', { params: type ? { type } : undefined });
     return response.data;
   },
 
