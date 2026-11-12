@@ -13,8 +13,9 @@ import type { Product } from '../types';
 
 export default function HomePage() {
   useEffect(() => {
-    document.title = 'Scent Studio | Premium Fragrances in Pakistan';
-    return () => { document.title = 'Scent Studio | Premium Fragrances in Pakistan'; };
+    const title = 'Scent Studio | Premium Fragrances in Pakistan - Affordable Luxury Perfumes';
+    document.title = title;
+    return () => { document.title = title; };
   }, []);
 
   const [bundles, setBundles] = useState<Product[]>([]);

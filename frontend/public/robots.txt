@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://scentstudio.pk/sitemap.xml
+Sitemap: https://scentnstudio.pk/sitemap.xml
