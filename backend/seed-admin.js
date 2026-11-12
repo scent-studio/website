@@ -1,7 +1,13 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const MONGODB_URI = 'mongodb+srv://scentstudio2_db_user:Ov5WkuHynL9MOAF8@cluster0.wnwfw0i.mongodb.net/scent-studio';
+require('dotenv').config();
+
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('MONGODB_URI is not set. Add it to backend/.env (never commit it).');
+  process.exit(1);
+}
 
 const userSchema = new mongoose.Schema({
   name: String,
