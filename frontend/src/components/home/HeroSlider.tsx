@@ -93,6 +93,8 @@ export default function HeroSlider() {
         );
       })()}
 
+      {slides.length > 1 && (
+      <>
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
         {slides.map((_, idx) => (
           <button
@@ -124,6 +126,8 @@ export default function HeroSlider() {
       >
         <ChevronRight size={20} />
       </button>
+      </>
+      )}
     </section>
   );
 }
