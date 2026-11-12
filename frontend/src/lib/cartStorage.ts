@@ -136,7 +136,7 @@ export function onCartChange(callback: () => void): () => void {
 
 /** Free shipping threshold and flat rate in PKR */
 export const SHIPPING = {
-  freeThreshold: 2000,
+  freeThreshold: 3000,
   flatRate: 200,
   taxRate: 0,
 } as const;

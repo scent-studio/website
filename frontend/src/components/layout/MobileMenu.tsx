@@ -44,7 +44,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             className="fixed top-0 left-0 bottom-0 w-72 bg-luxury-white border-r border-luxury-border z-50 overflow-y-auto"
           >
             <div className="flex items-center justify-between p-5 border-b border-luxury-border">
-              <span className="text-xl font-serif text-luxury-charcoal tracking-[0.12em]">Scent Studio</span>
+              <img src="/logo.png" alt="Scent Studio" className="h-10 w-auto dark:invert" />
               <div className="flex items-center gap-1">
                 <button onClick={onClose} className="text-luxury-steel hover:text-luxury-charcoal transition-colors p-1">
                   <X size={20} />

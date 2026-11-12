@@ -22,26 +22,24 @@ export default function Layout({ children, className, showAnnouncement = true }:
       <div className="fixed top-0 left-0 right-0 z-40">
         {showAnnouncement && (
           <div
-            className="bg-gradient-to-r from-[#01411C] via-[#006A2D] to-[#01411C] overflow-hidden py-2.5 border-b border-white/10"
+            className="bg-luxury-ink overflow-hidden py-2.5 border-b border-luxury-gold/20"
             role="marquee"
-            aria-label="Independence Day Sale — Up to 30% off with code AZADI"
+            aria-label="Free shipping on orders over Rs. 3,000"
           >
             <div className="announcement-marquee-track flex w-max">
               {[0, 1].map((copy) => (
                 <p
                   key={copy}
-                  className="flex shrink-0 items-center whitespace-nowrap text-xs text-white tracking-wider font-sans font-medium"
+                  className="flex shrink-0 items-center whitespace-nowrap text-xs text-luxury-gold-light tracking-wider font-sans font-medium"
                   aria-hidden={copy === 1 ? true : undefined}
                 >
                   {Array.from({ length: 4 }).map((_, i) => (
                     <span key={i} className="inline-flex items-center px-8">
-                      <span className="text-[10px] mr-2">🇵🇰</span>
-                      {/* Azadi Sale — Up to 30% off with code AZADI */}
-                      <span className="mx-8 text-white/40" aria-hidden="true">
+                      <span className="mx-8 text-luxury-gold/50" aria-hidden="true">
                         ★
                       </span>
-                      Free shipping on orders over Rs. 2,000
-                      <span className="mx-8 text-white/40" aria-hidden="true">
+                      Free shipping on orders over Rs. 3,000
+                      <span className="mx-8 text-luxury-gold/50" aria-hidden="true">
                         ★
                       </span>
                     </span>

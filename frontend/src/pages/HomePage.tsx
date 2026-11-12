@@ -117,7 +117,7 @@ export default function HomePage() {
 
       {ready && women.length > 0 && (
         <ProductGrid
-          title="Best Perfumes for Women in Pakistan"
+          title="Elegant Perfumes for Women"
           subtitle="Elegant, warm & layered florals"
           products={women}
           viewAllLink="/shop?gender=female"
@@ -126,7 +126,7 @@ export default function HomePage() {
 
       {ready && men.length > 0 && (
         <ProductGrid
-          title="Perfume Brands for Men in Pakistan"
+          title="Bold Fragrances for Men"
           subtitle="Bold, confident & long-lasting"
           products={men}
           viewAllLink="/shop?gender=male"
@@ -135,7 +135,7 @@ export default function HomePage() {
 
       {ready && unisex.length > 0 && (
         <ProductGrid
-          title="Unisex Perfumes in Pakistan"
+          title="Best Unisex Perfumes in Pakistan"
           subtitle="Clean musks, light woods & balanced florals"
           products={unisex}
           viewAllLink="/shop?gender=unisex"

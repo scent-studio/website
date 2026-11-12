@@ -13,7 +13,7 @@ const features = [
   {
     icon: Truck,
     title: 'Free Shipping',
-    description: 'Enjoy free shipping on all orders over 2000 PKR, with express delivery available.',
+    description: 'Enjoy free shipping on all orders over 3000 PKR, with express delivery available.',
   },
   {
     icon: CreditCard,

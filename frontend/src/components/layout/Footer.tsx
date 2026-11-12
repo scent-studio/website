@@ -61,7 +61,7 @@ export default function Footer() {
         <div className="py-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div>
             <Link to="/" className="inline-block">
-              <span className="text-2xl font-serif text-luxury-charcoal tracking-[0.12em]">Scent Studio</span>
+              <img src="/logo.png" alt="Scent Studio" className="h-16 w-auto dark:invert" />
             </Link>
             <p className="mt-4 text-sm text-luxury-steel leading-relaxed max-w-xs">
               Discover the world's finest fragrances, crafted with passion and precision. 
