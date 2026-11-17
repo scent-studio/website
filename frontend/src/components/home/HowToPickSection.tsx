@@ -61,8 +61,10 @@ Experience our premium fragrances in a convenient 5ml size before choosing your 
           >
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-luxury-border bg-luxury-ivory shadow-card">
               <img
-                src="/uploads/categories/tester.jpeg"
-                alt="Curated perfume tester box"
+                src="/uploads/categories/tester-collection.jpeg"
+                alt="Scent Studio Tester Collection — Legacy, Lush Euphoria and Rosaria 5ml testers"
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-luxury-charcoal/20 via-transparent to-transparent" />
