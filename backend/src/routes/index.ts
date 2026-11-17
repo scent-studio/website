@@ -36,7 +36,6 @@ router.use('/analytics', analyticsRoutes);
 router.use('/blogs', blogRoutes);
 router.use('/collections', collectionRoutes);
 router.use('/upload', uploadRoutes);
-router.use('/temp-maintenance', require('./tempMaintenanceRoutes')); // TEMP: remove after thumbnail regeneration
 
 router.get('/health', (req: any, res: any) => {
   res.status(200).json({

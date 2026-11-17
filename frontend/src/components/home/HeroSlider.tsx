@@ -82,7 +82,7 @@ export default function HeroSlider() {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0"
             >
-              <img src={slide.image} alt={slide.alt} className="absolute inset-0 h-full w-full object-cover" />
+              <img src={slide.image} alt={slide.alt} fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
             </motion.div>
           </AnimatePresence>
         );
