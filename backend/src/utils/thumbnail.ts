@@ -1,7 +1,8 @@
 const sharp = require('sharp');
 
-const THUMB_WIDTH = 300;
-const THUMB_QUALITY = 70;
+// Cards render ~380-430px wide (up to 2x on retina), so 300px looked blurry.
+const THUMB_WIDTH = 640;
+const THUMB_QUALITY = 82;
 
 const generateThumbnail = async (dataUrl: string): Promise<string | null> => {
   const match = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(dataUrl);

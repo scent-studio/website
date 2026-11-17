@@ -9,10 +9,12 @@ const { generateThumbnail } = require('./utils/thumbnail');
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
   const Product = require('./models/Product');
 
-  const products = await Product.find({
-    images: { $exists: true, $ne: [] },
-    $or: [{ thumbnail: null }, { thumbnail: { $exists: false } }],
-  }).select('name images thumbnail');
+  // Pass --force to regenerate existing thumbnails (e.g. after changing size/quality)
+  const force = process.argv.includes('--force');
+  const filter: any = { images: { $exists: true, $ne: [] } };
+  if (!force) filter.$or = [{ thumbnail: null }, { thumbnail: { $exists: false } }];
+
+  const products = await Product.find(filter).select('name images thumbnail');
 
   console.log(`Generating thumbnails for ${products.length} products...`);
 

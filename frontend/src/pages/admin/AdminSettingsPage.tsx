@@ -7,6 +7,7 @@ import Input from '../../components/ui/Input';
 import Textarea from '../../components/ui/Textarea';
 import Button from '../../components/ui/Button';
 import Loader from '../../components/ui/Loader';
+import TempThumbnailRegenerator from '../../components/admin/TempThumbnailRegenerator';
 import { settingsService } from '../../services/settingsService';
 import toast from 'react-hot-toast';
 
@@ -156,6 +157,7 @@ export default function AdminSettingsPage() {
           </Button>
         </div>
       </form>
+      <TempThumbnailRegenerator />
     </div>
   );
 }
