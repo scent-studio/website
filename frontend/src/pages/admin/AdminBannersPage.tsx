@@ -104,10 +104,20 @@ export default function AdminBannersPage() {
     try {
       await bannerService.delete(deleteId);
       toast.success('Banner deleted');
+    } catch (err: any) {
+      // 404 means it was already deleted - treat as success and just refresh the list
+      if (err?.response?.status === 404) {
+        toast.success('Banner already deleted');
+      } else {
+        toast.error(err?.response?.data?.message || 'Failed to delete');
+        setDeleting(false);
+        return;
+      }
+    }
+    try {
+      setBanners((prev) => prev.filter((b) => b._id !== deleteId));
       setDeleteId(null);
       fetchData();
-    } catch {
-      toast.error('Failed to delete');
     } finally {
       setDeleting(false);
     }

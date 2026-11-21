@@ -11,9 +11,18 @@ const {
 const { protect, authorize } = require('../middleware/auth');
 const { cacheMiddleware } = require('../middleware/cache');
 
+// Public hero slider data: cached
 router.get('/active', cacheMiddleware(5 * 60 * 1000), getActiveBanners);
-router.get('/', cacheMiddleware(5 * 60 * 1000), getBanners);
-router.get('/:id', cacheMiddleware(5 * 60 * 1000), getBanner);
+
+// Admin list/detail: never cache, otherwise the admin panel keeps showing deleted/old banners
+const noStore = (req: any, res: any, next: any) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+  res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+  next();
+};
+router.get('/', noStore, getBanners);
+router.get('/:id', noStore, getBanner);
 
 router.use(protect, authorize('admin'));
 router.post('/', createBanner);
